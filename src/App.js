@@ -19,6 +19,7 @@ import AdminVehicles from './pages/AdminVehicles';
 import AdminDrivers from './pages/AdminDrivers';
 import AdminPassengers from './pages/AdminPassengers';
 import AdminTrips from './pages/AdminTrips';
+import AdminDepartures from './pages/AdminDepartures';
 import './App.css';
 
 function App() {
@@ -126,6 +127,14 @@ function App() {
                 element={
                   <ProtectedRoute requiredRole="admin">
                     <AdminTrips />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/departures" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDepartures />
                   </ProtectedRoute>
                 } 
               />

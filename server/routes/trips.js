@@ -5,7 +5,23 @@ const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const router = express.Router();
 
 // Get all trips with filters
+// Allow optional authentication for admin to see all trips
 router.get('/', async (req, res) => {
+  // Try to authenticate but don't fail if no token (for public access)
+  const authHeader = req.headers['authorization'];
+  if (authHeader) {
+    const jwt = require('jsonwebtoken');
+    const token = authHeader.split(' ')[1];
+    if (token) {
+      try {
+        const user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        req.user = user;
+      } catch (err) {
+        // Invalid token, continue as unauthenticated
+        req.user = null;
+      }
+    }
+  }
   try {
     const { origin, destination, min_fare, max_fare, vehicle_type, departure_date, status } = req.query;
 
@@ -58,12 +74,17 @@ router.get('/', async (req, res) => {
       paramCount++;
     }
 
-    if (status) {
+    if (status && status !== 'all') {
       query += ` AND t.status = $${paramCount}`;
       params.push(status);
       paramCount++;
-    } else {
-      query += ` AND t.status = 'scheduled' AND t.departure_time > NOW()`;
+    } else if (status !== 'all') {
+      // For admin users, show all trips if status=all
+      // For regular users, only show scheduled future trips
+      const isAdmin = req.user && req.user.role === 'admin';
+      if (!isAdmin) {
+        query += ` AND t.status = 'scheduled' AND t.departure_time > NOW()`;
+      }
     }
 
     query += ` GROUP BY t.id, u.full_name, u.phone, v.vehicle_type, v.registration_number, v.comfort_level

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { tripService } from '../services/tripService';
-import './AdminTrips.css';
+import './AdminDepartures.css';
 
-const AdminTrips = () => {
-  const [trips, setTrips] = useState([]);
+const AdminDepartures = () => {
+  const [departures, setDepartures] = useState([]);
+  const [arrivals, setArrivals] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +20,8 @@ const AdminTrips = () => {
     departure_date: '',
     departure_time: '',
     total_seats: '',
-    status: 'scheduled'
+    status: 'scheduled',
+    trip_type: 'departure' // departure or arrival
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -31,13 +33,15 @@ const AdminTrips = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // For admin, get all trips by passing status=all or empty status
-      const [tripsRes, driversRes, vehiclesRes] = await Promise.all([
-        api.get('/trips?status=all'), // Get all trips for admin
+      const [departuresRes, arrivalsRes, driversRes, vehiclesRes] = await Promise.all([
+        api.get('/trips?origin=Nkawkaw&status=scheduled'),
+        api.get('/trips?destination=Nkawkaw&status=scheduled'),
         api.get('/users?role=driver'),
         api.get('/vehicles')
       ]);
-      setTrips(tripsRes.data.trips || []);
+      
+      setDepartures(departuresRes.data.trips || []);
+      setArrivals(arrivalsRes.data.trips || []);
       setDrivers(driversRes.data.users || []);
       setVehicles(vehiclesRes.data.vehicles || []);
     } catch (error) {
@@ -57,7 +61,11 @@ const AdminTrips = () => {
     setError('');
     setSuccess('');
 
-    if (!formData.driver_id || !formData.destination || !formData.fare || 
+    // Set origin/destination based on trip type
+    const finalOrigin = formData.trip_type === 'departure' ? 'Nkawkaw' : formData.destination;
+    const finalDestination = formData.trip_type === 'departure' ? formData.destination : 'Nkawkaw';
+
+    if (!formData.driver_id || !finalDestination || !formData.fare || 
         !formData.departure_date || !formData.departure_time || !formData.total_seats) {
       setError('Please fill in all required fields');
       return;
@@ -68,8 +76,8 @@ const AdminTrips = () => {
       const tripData = {
         driver_id: formData.driver_id,
         vehicle_id: formData.vehicle_id || null,
-        origin: formData.origin,
-        destination: formData.destination,
+        origin: finalOrigin,
+        destination: finalDestination,
         fare: parseFloat(formData.fare),
         departure_time: departureDateTime,
         total_seats: parseInt(formData.total_seats),
@@ -102,11 +110,12 @@ const AdminTrips = () => {
       departure_date: '',
       departure_time: '',
       total_seats: '',
-      status: 'scheduled'
+      status: 'scheduled',
+      trip_type: 'departure'
     });
   };
 
-  const handleEdit = (trip) => {
+  const handleEdit = (trip, type) => {
     setEditingTrip(trip);
     const departure = new Date(trip.departure_time);
     setFormData({
@@ -118,7 +127,8 @@ const AdminTrips = () => {
       departure_date: departure.toISOString().split('T')[0],
       departure_time: departure.toTimeString().slice(0, 5),
       total_seats: trip.total_seats || '',
-      status: trip.status || 'scheduled'
+      status: trip.status || 'scheduled',
+      trip_type: type
     });
     setShowForm(true);
   };
@@ -148,13 +158,13 @@ const AdminTrips = () => {
   };
 
   if (loading) {
-    return <div className="admin-loading">Loading trips...</div>;
+    return <div className="admin-loading">Loading departures and arrivals...</div>;
   }
 
   return (
-    <div className="admin-trips">
+    <div className="admin-departures">
       <div className="page-header">
-        <h1>📅 Manage Trips</h1>
+        <h1>✈️ Manage Departures & Arrivals</h1>
         <button onClick={() => setShowForm(true)} className="btn-primary">
           ➕ Add New Trip
         </button>
@@ -166,8 +176,21 @@ const AdminTrips = () => {
       {showForm && (
         <div className="form-modal">
           <div className="form-content">
-            <h2>{editingTrip ? 'Edit Trip' : 'Add New Trip'}</h2>
+            <h2>{editingTrip ? 'Edit Trip' : 'Add New Departure/Arrival'}</h2>
             <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Trip Type *</label>
+                <select
+                  name="trip_type"
+                  value={formData.trip_type}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="departure">✈️ Departure (From Nkawkaw)</option>
+                  <option value="arrival">🏁 Arrival (To Nkawkaw)</option>
+                </select>
+              </div>
+
               <div className="form-group">
                 <label>Driver *</label>
                 <select
@@ -203,28 +226,16 @@ const AdminTrips = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Origin *</label>
-                  <input
-                    type="text"
-                    name="origin"
-                    value={formData.origin}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Destination *</label>
+                  <label>{formData.trip_type === 'departure' ? 'Destination *' : 'Origin *'}</label>
                   <input
                     type="text"
                     name="destination"
                     value={formData.destination}
                     onChange={handleChange}
                     required
+                    placeholder={formData.trip_type === 'departure' ? 'e.g., Accra' : 'e.g., Accra'}
                   />
                 </div>
-              </div>
-
-              <div className="form-row">
                 <div className="form-group">
                   <label>Fare (₵) *</label>
                   <input
@@ -237,6 +248,9 @@ const AdminTrips = () => {
                     step="0.01"
                   />
                 </div>
+              </div>
+
+              <div className="form-row">
                 <div className="form-group">
                   <label>Total Seats *</label>
                   <input
@@ -247,6 +261,20 @@ const AdminTrips = () => {
                     required
                     min="1"
                   />
+                </div>
+                <div className="form-group">
+                  <label>Status *</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="scheduled">Scheduled</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
                 </div>
               </div>
 
@@ -274,21 +302,6 @@ const AdminTrips = () => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label>Status *</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="scheduled">Scheduled</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-
               <div className="form-actions">
                 <button type="button" onClick={handleCancel} className="btn-cancel">
                   Cancel
@@ -302,58 +315,86 @@ const AdminTrips = () => {
         </div>
       )}
 
-      <div className="trips-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Route</th>
-              <th>Driver</th>
-              <th>Vehicle</th>
-              <th>Departure</th>
-              <th>Fare</th>
-              <th>Seats</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {trips.length > 0 ? (
-              trips.map(trip => (
-                <tr key={trip.id}>
-                  <td>
-                    <strong>{trip.origin} → {trip.destination}</strong>
-                  </td>
-                  <td>{trip.driver_name || 'N/A'}</td>
-                  <td>{trip.registration_number || 'N/A'}</td>
-                  <td>{formatDateTime(trip.departure_time)}</td>
-                  <td>₵{parseFloat(trip.fare).toFixed(2)}</td>
-                  <td>{trip.available_seats}/{trip.total_seats}</td>
-                  <td>
-                    <span className={`status-badge ${trip.status}`}>
-                      {trip.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button onClick={() => handleEdit(trip)} className="btn-edit">
-                      ✏️ Edit
+      <div className="departures-arrivals-grid">
+        {/* Departures Section */}
+        <div className="section-card">
+          <div className="section-header">
+            <h2>✈️ Departures</h2>
+            <span className="count-badge">{departures.length}</span>
+          </div>
+          <div className="trips-list">
+            {departures.length > 0 ? (
+              departures.map(trip => (
+                <div key={trip.id} className="trip-item">
+                  <div className="trip-info">
+                    <div className="trip-route">
+                      <strong>{trip.origin} → {trip.destination}</strong>
+                    </div>
+                    <div className="trip-details">
+                      <span>🚗 {trip.registration_number || 'N/A'}</span>
+                      <span>👤 {trip.driver_name || 'N/A'}</span>
+                      <span>⏰ {formatDateTime(trip.departure_time)}</span>
+                      <span>💰 ₵{parseFloat(trip.fare).toFixed(2)}</span>
+                      <span>💺 {trip.available_seats}/{trip.total_seats}</span>
+                    </div>
+                  </div>
+                  <div className="trip-actions">
+                    <button onClick={() => handleEdit(trip, 'departure')} className="btn-edit">
+                      ✏️
                     </button>
                     <button onClick={() => handleDelete(trip.id)} className="btn-delete">
-                      🗑️ Delete
+                      🗑️
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))
             ) : (
-              <tr>
-                <td colSpan="8" className="no-data">No trips found</td>
-              </tr>
+              <p className="no-data">No departures scheduled</p>
             )}
-          </tbody>
-        </table>
+          </div>
+        </div>
+
+        {/* Arrivals Section */}
+        <div className="section-card">
+          <div className="section-header">
+            <h2>🏁 Arrivals</h2>
+            <span className="count-badge">{arrivals.length}</span>
+          </div>
+          <div className="trips-list">
+            {arrivals.length > 0 ? (
+              arrivals.map(trip => (
+                <div key={trip.id} className="trip-item">
+                  <div className="trip-info">
+                    <div className="trip-route">
+                      <strong>{trip.origin} → {trip.destination}</strong>
+                    </div>
+                    <div className="trip-details">
+                      <span>🚗 {trip.registration_number || 'N/A'}</span>
+                      <span>👤 {trip.driver_name || 'N/A'}</span>
+                      <span>⏰ {formatDateTime(trip.departure_time)}</span>
+                      <span>💰 ₵{parseFloat(trip.fare).toFixed(2)}</span>
+                      <span>💺 {trip.available_seats}/{trip.total_seats}</span>
+                    </div>
+                  </div>
+                  <div className="trip-actions">
+                    <button onClick={() => handleEdit(trip, 'arrival')} className="btn-edit">
+                      ✏️
+                    </button>
+                    <button onClick={() => handleDelete(trip.id)} className="btn-delete">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="no-data">No arrivals scheduled</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default AdminTrips;
+export default AdminDepartures;
 

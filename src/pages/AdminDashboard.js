@@ -129,6 +129,12 @@ const AdminDashboard = () => {
             <p>View, edit, and manage all trips</p>
           </Link>
 
+          <Link to="/admin/departures" className="action-card">
+            <div className="action-icon">✈️</div>
+            <h3>Departures & Arrivals</h3>
+            <p>Manage departures and arrivals board</p>
+          </Link>
+
           <Link to="/admin/analytics" className="action-card">
             <div className="action-icon">📊</div>
             <h3>Analytics</h3>

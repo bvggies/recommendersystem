@@ -40,9 +40,9 @@ const Navbar = () => {
               {user?.role === 'admin' && (
                 <>
                   <li><Link to="/admin">Admin</Link></li>
+                  <li><Link to="/admin/departures">Departures</Link></li>
                   <li><Link to="/admin/vehicles">Vehicles</Link></li>
                   <li><Link to="/admin/drivers">Drivers</Link></li>
-                  <li><Link to="/admin/trips">Trips</Link></li>
                 </>
               )}
               <li><Link to="/profile">Profile</Link></li>
