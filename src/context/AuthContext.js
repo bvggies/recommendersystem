@@ -21,11 +21,15 @@ export const AuthProvider = ({ children }) => {
 
     if (token && storedUser) {
       setUser(JSON.parse(storedUser));
-      // Verify token is still valid
+      // Verify token is still valid and refresh with latest user data
       authService.getCurrentUser()
-        .then(({ user }) => {
+        .then(({ user, token: newToken }) => {
           setUser(user);
           localStorage.setItem('user', JSON.stringify(user));
+          // Update token if a new one was provided (e.g., role changed)
+          if (newToken) {
+            localStorage.setItem('token', newToken);
+          }
         })
         .catch(() => {
           localStorage.removeItem('token');

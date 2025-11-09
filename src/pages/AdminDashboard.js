@@ -7,18 +7,19 @@ import './AdminDashboard.css';
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState({});
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [topUsers, setTopUsers] = useState([]);
+  const [ipStats, setIpStats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [recentActivity, setRecentActivity] = useState([]);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsRes, logsRes] = await Promise.all([
-        api.get('/admin/dashboard'),
-        api.get('/admin/logs?limit=10')
-      ]);
-      setStats(statsRes.data.stats || {});
-      setRecentActivity(logsRes.data.logs || []);
+      const response = await api.get('/admin/dashboard');
+      setStats(response.data.stats || {});
+      setRecentActivities(response.data.recentActivities || []);
+      setTopUsers(response.data.topUsers || []);
+      setIpStats(response.data.ipStats || []);
     } catch (error) {
       console.error('Failed to load dashboard:', error);
       const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
@@ -62,145 +63,269 @@ const AdminDashboard = () => {
     );
   }
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-GH', {
+      style: 'currency',
+      currency: 'GHS',
+      minimumFractionDigits: 2
+    }).format(amount || 0);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getActivityIcon = (actionType) => {
+    const icons = {
+      'login': '🔐',
+      'logout': '🚪',
+      'create_trip': '🚌',
+      'update_trip': '✏️',
+      'delete_trip': '🗑️',
+      'booking': '📋',
+      'cancel_booking': '❌',
+      'rating': '⭐',
+      'register': '👤',
+      'update_profile': '📝'
+    };
+    return icons[actionType] || '📝';
+  };
+
   return (
-    <div className="admin-dashboard">
-      <div className="admin-header">
-        <div className="header-content">
+    <div className="admin-dashboard-mobile">
+      {/* Header */}
+      <div className="admin-header-mobile">
+        <div className="header-content-mobile">
           <h1>👨‍💼 Admin Dashboard</h1>
           <p>Welcome back, {user?.full_name || user?.username}</p>
         </div>
-        <div className="header-actions">
-          <button onClick={loadDashboardData} className="refresh-btn">
-            🔄 Refresh
-          </button>
-        </div>
+        <button onClick={loadDashboardData} className="refresh-btn-mobile">
+          🔄 Refresh
+        </button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        <div className="stat-card users">
-          <div className="stat-icon">👥</div>
-          <div className="stat-info">
+      {/* Main Stats Grid */}
+      <div className="stats-grid-mobile">
+        <div className="stat-card-mobile users">
+          <div className="stat-icon-wrapper">
+            <div className="stat-icon">👥</div>
+          </div>
+          <div className="stat-info-mobile">
             <h3>{stats.total_users || 0}</h3>
             <p>Total Users</p>
-            <div className="stat-breakdown">
+            <div className="stat-breakdown-mobile">
               <span>{stats.total_passengers || 0} Passengers</span>
               <span>{stats.total_drivers || 0} Drivers</span>
             </div>
           </div>
         </div>
 
-        <div className="stat-card trips">
-          <div className="stat-icon">🚌</div>
-          <div className="stat-info">
+        <div className="stat-card-mobile trips">
+          <div className="stat-icon-wrapper">
+            <div className="stat-icon">🚌</div>
+          </div>
+          <div className="stat-info-mobile">
             <h3>{stats.total_trips || 0}</h3>
             <p>Total Trips</p>
-            <div className="stat-breakdown">
+            <div className="stat-breakdown-mobile">
               <span>{stats.scheduled_trips || 0} Scheduled</span>
+              <span>{stats.completed_trips || 0} Completed</span>
             </div>
           </div>
         </div>
 
-        <div className="stat-card bookings">
-          <div className="stat-icon">📋</div>
-          <div className="stat-info">
+        <div className="stat-card-mobile bookings">
+          <div className="stat-icon-wrapper">
+            <div className="stat-icon">📋</div>
+          </div>
+          <div className="stat-info-mobile">
             <h3>{stats.total_bookings || 0}</h3>
             <p>Total Bookings</p>
-            <div className="stat-breakdown">
+            <div className="stat-breakdown-mobile">
               <span>{stats.confirmed_bookings || 0} Confirmed</span>
             </div>
           </div>
         </div>
 
-        <div className="stat-card ratings">
-          <div className="stat-icon">⭐</div>
-          <div className="stat-info">
+        <div className="stat-card-mobile revenue">
+          <div className="stat-icon-wrapper">
+            <div className="stat-icon">💰</div>
+          </div>
+          <div className="stat-info-mobile">
+            <h3>{formatCurrency(stats.total_revenue || 0)}</h3>
+            <p>Total Revenue</p>
+            <div className="stat-breakdown-mobile">
+              <span>From completed trips</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card-mobile ratings">
+          <div className="stat-icon-wrapper">
+            <div className="stat-icon">⭐</div>
+          </div>
+          <div className="stat-info-mobile">
             <h3>{stats.avg_rating ? parseFloat(stats.avg_rating).toFixed(1) : 'N/A'}</h3>
             <p>Average Rating</p>
-            <div className="stat-breakdown">
+            <div className="stat-breakdown-mobile">
               <span>{stats.total_ratings || 0} Reviews</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card-mobile vehicles">
+          <div className="stat-icon-wrapper">
+            <div className="stat-icon">🚗</div>
+          </div>
+          <div className="stat-info-mobile">
+            <h3>{stats.total_vehicles || 0}</h3>
+            <p>Total Vehicles</p>
+            <div className="stat-breakdown-mobile">
+              <span>Registered</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card-mobile activity">
+          <div className="stat-icon-wrapper">
+            <div className="stat-icon">📊</div>
+          </div>
+          <div className="stat-info-mobile">
+            <h3>{stats.activities_24h || 0}</h3>
+            <p>Activities (24h)</p>
+            <div className="stat-breakdown-mobile">
+              <span>{stats.activities_7d || 0} This Week</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card-mobile ips">
+          <div className="stat-icon-wrapper">
+            <div className="stat-icon">🌐</div>
+          </div>
+          <div className="stat-info-mobile">
+            <h3>{stats.unique_ips || 0}</h3>
+            <p>Unique IPs</p>
+            <div className="stat-breakdown-mobile">
+              <span>Last 7 days</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="quick-actions-section">
+      <div className="quick-actions-section-mobile">
         <h2>Quick Actions</h2>
-        <div className="actions-grid">
-          <Link to="/admin/vehicles" className="action-card">
+        <div className="actions-grid-mobile">
+          <Link to="/admin/vehicles" className="action-card-mobile">
             <div className="action-icon">🚗</div>
             <h3>Manage Vehicles</h3>
-            <p>Add, edit, or remove buses and cars</p>
           </Link>
-
-          <Link to="/admin/drivers" className="action-card">
+          <Link to="/admin/drivers" className="action-card-mobile">
             <div className="action-icon">👨‍✈️</div>
             <h3>Manage Drivers</h3>
-            <p>View and manage driver accounts</p>
           </Link>
-
-          <Link to="/admin/passengers" className="action-card">
+          <Link to="/admin/passengers" className="action-card-mobile">
             <div className="action-icon">👤</div>
             <h3>Manage Passengers</h3>
-            <p>View and manage passenger accounts</p>
           </Link>
-
-          <Link to="/admin/trips" className="action-card">
+          <Link to="/admin/trips" className="action-card-mobile">
             <div className="action-icon">📅</div>
             <h3>Manage Trips</h3>
-            <p>View, edit, and manage all trips</p>
           </Link>
-
-          <Link to="/admin/departures" className="action-card">
+          <Link to="/admin/departures" className="action-card-mobile">
             <div className="action-icon">✈️</div>
-            <h3>Departures & Arrivals</h3>
-            <p>Manage departures and arrivals board</p>
-          </Link>
-
-          <Link to="/admin/analytics" className="action-card">
-            <div className="action-icon">📊</div>
-            <h3>Analytics</h3>
-            <p>View system analytics and reports</p>
-          </Link>
-
-          <Link to="/admin/logs" className="action-card">
-            <div className="action-icon">📝</div>
-            <h3>System Logs</h3>
-            <p>View system activity logs</p>
+            <h3>Departures</h3>
           </Link>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="recent-activity-section">
-        <h2>Recent Activity</h2>
-        <div className="activity-list">
-          {recentActivity.length > 0 ? (
-            recentActivity.map(activity => (
-              <div key={activity.id} className="activity-item">
-                <div className="activity-icon">
-                  {activity.action_type === 'login' ? '🔐' : 
-                   activity.action_type === 'create_trip' ? '🚌' :
-                   activity.action_type === 'booking' ? '📋' : '📝'}
-                </div>
-                <div className="activity-content">
-                  <p className="activity-title">{activity.action_type}</p>
-                  <p className="activity-details">{activity.action_details || 'No details'}</p>
-                  <span className="activity-time">
-                    {new Date(activity.created_at).toLocaleString()}
-                  </span>
-                </div>
-                {activity.username && (
-                  <div className="activity-user">
-                    {activity.username} ({activity.role})
+      {/* Top Active Users */}
+      {topUsers.length > 0 && (
+        <div className="analytics-section-mobile">
+          <h2>📈 Top Active Users (7 Days)</h2>
+          <div className="analytics-card-mobile">
+            <div className="users-list-mobile">
+              {topUsers.map((userItem, idx) => (
+                <div key={userItem.id || idx} className="user-item-mobile">
+                  <div className="user-rank">#{idx + 1}</div>
+                  <div className="user-info-mobile">
+                    <div className="user-name-mobile">
+                      {userItem.full_name || userItem.username}
+                      <span className="user-role-badge">{userItem.role}</span>
+                    </div>
+                    <div className="user-stats-mobile">
+                      <span>📊 {userItem.activity_count} activities</span>
+                      <span>🌐 {userItem.unique_ips} IPs</span>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="no-activity">No recent activity</p>
-          )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* IP Address Statistics */}
+      {ipStats.length > 0 && (
+        <div className="analytics-section-mobile">
+          <h2>🌐 IP Address Statistics</h2>
+          <div className="analytics-card-mobile">
+            <div className="ip-list-mobile">
+              {ipStats.map((ipItem, idx) => (
+                <div key={idx} className="ip-item-mobile">
+                  <div className="ip-address-mobile">
+                    <span className="ip-icon">🔗</span>
+                    {ipItem.ip_address}
+                  </div>
+                  <div className="ip-stats-mobile">
+                    <span>📊 {ipItem.request_count} requests</span>
+                    <span>👥 {ipItem.unique_users} users</span>
+                    <span>🕐 {formatDate(ipItem.last_seen)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Activities */}
+      <div className="analytics-section-mobile">
+        <h2>📝 Recent Activities</h2>
+        <div className="analytics-card-mobile">
+          <div className="activity-list-mobile">
+            {recentActivities.length > 0 ? (
+              recentActivities.map(activity => (
+                <div key={activity.id} className="activity-item-mobile">
+                  <div className="activity-icon-mobile">
+                    {getActivityIcon(activity.action_type)}
+                  </div>
+                  <div className="activity-content-mobile">
+                    <div className="activity-header-mobile">
+                      <p className="activity-title-mobile">{activity.action_type?.replace(/_/g, ' ')}</p>
+                      {activity.ip_address && (
+                        <span className="activity-ip">🌐 {activity.ip_address}</span>
+                      )}
+                    </div>
+                    <p className="activity-details-mobile">
+                      {activity.username ? `${activity.username} (${activity.role})` : 'System'}
+                    </p>
+                    <span className="activity-time-mobile">
+                      {formatDate(activity.created_at)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="no-activity-mobile">No recent activity</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -208,4 +333,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-

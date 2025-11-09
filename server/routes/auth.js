@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../db/connection');
 const { authenticateToken } = require('../middleware/auth');
+const { logActivity, getClientIp } = require('../utils/activityLogger');
 
 const router = express.Router();
 
@@ -61,6 +62,10 @@ router.post('/register', async (req, res) => {
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
+
+    // Log registration activity
+    const ipAddress = getClientIp(req);
+    await logActivity(user.id, 'register', { username: user.username, role: user.role }, ipAddress);
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -137,6 +142,10 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // Log login activity
+    const ipAddress = getClientIp(req);
+    await logActivity(user.id, 'login', { username: user.username, role: user.role }, ipAddress);
+
     res.json({
       message: 'Login successful',
       token,
@@ -166,7 +175,19 @@ router.get('/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user: result.rows[0] });
+    const user = result.rows[0];
+    
+    // Generate new token with updated role (in case role changed in database)
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    res.json({ 
+      user,
+      token // Return new token with updated role
+    });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user' });
