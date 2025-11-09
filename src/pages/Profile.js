@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './Profile.css';
@@ -24,14 +24,7 @@ const Profile = () => {
   });
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    loadProfile();
-    if (user?.role === 'passenger' || user?.role === 'driver') {
-      loadStats();
-    }
-  }, [user]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       const response = await api.get('/users/profile');
       setProfile(response.data.user);
@@ -47,9 +40,9 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       if (user?.role === 'passenger') {
         const bookingsRes = await api.get('/bookings/my-bookings');
@@ -80,7 +73,14 @@ const Profile = () => {
     } catch (error) {
       console.error('Failed to load stats:', error);
     }
-  };
+  }, [user?.role]);
+
+  useEffect(() => {
+    loadProfile();
+    if (user?.role === 'passenger' || user?.role === 'driver') {
+      loadStats();
+    }
+  }, [user, loadProfile, loadStats]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
