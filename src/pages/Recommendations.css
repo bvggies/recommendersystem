@@ -1,0 +1,157 @@
+.recommendations-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.recommendations-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.recommendations-header h1 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.recommendations-header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.recommendations-filters {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.filter-inputs {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-inputs input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.filter-inputs input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.filter-inputs button {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.filter-inputs button:hover {
+  transform: translateY(-2px);
+}
+
+.recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.recommendation-card {
+  background: white;
+  border: 2px solid #667eea;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.recommendation-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+}
+
+.recommendation-badge {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.trip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+  margin-top: 0.5rem;
+}
+
+.trip-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.trip-fare {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.trip-details p {
+  margin: 0.5rem 0;
+  color: #666;
+}
+
+.view-trip-btn {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  text-align: center;
+  transition: transform 0.2s;
+  width: 100%;
+}
+
+.view-trip-btn:hover {
+  transform: translateY(-2px);
+}
+
+.no-recommendations {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 10px;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .filter-inputs {
+    flex-direction: column;
+  }
+
+  .recommendations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
