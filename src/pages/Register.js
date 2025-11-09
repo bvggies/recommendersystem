@@ -61,84 +61,151 @@ const Register = () => {
   return (
     <div className="register-container">
       <div className="register-card">
-        <h2>Register for Nkawkaw Transport</h2>
+        <div className="register-header">
+          <div className="header-icon">🚌</div>
+          <h2>Create Your Account</h2>
+          <p>Join Nkawkaw Transport System</p>
+        </div>
+        
         {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Full Name</label>
-            <input
-              type="text"
-              name="full_name"
-              value={formData.full_name}
-              onChange={handleChange}
-            />
+        
+        <form onSubmit={handleSubmit} className="register-form">
+          <div className="form-grid">
+            {/* Full Name */}
+            <div className="form-group">
+              <label htmlFor="full_name">
+                <span className="label-icon">👤</span>
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="full_name"
+                name="full_name"
+                value={formData.full_name}
+                onChange={handleChange}
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            {/* Username */}
+            <div className="form-group">
+              <label htmlFor="username">
+                <span className="label-icon">🔐</span>
+                Username *
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                required
+                placeholder="Choose a username"
+              />
+            </div>
+
+            {/* Email */}
+            <div className="form-group">
+              <label htmlFor="email">
+                <span className="label-icon">📧</span>
+                Email *
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                placeholder="your.email@example.com"
+              />
+            </div>
+
+            {/* Phone */}
+            <div className="form-group">
+              <label htmlFor="phone">
+                <span className="label-icon">📱</span>
+                Phone
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+233 XX XXX XXXX"
+              />
+            </div>
+
+            {/* Role */}
+            <div className="form-group">
+              <label htmlFor="role">
+                <span className="label-icon">🎭</span>
+                Role *
+              </label>
+              <select
+                id="role"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                required
+              >
+                <option value="passenger">👤 Passenger</option>
+                <option value="driver">🚗 Driver</option>
+              </select>
+            </div>
+
+            {/* Password */}
+            <div className="form-group">
+              <label htmlFor="password">
+                <span className="label-icon">🔒</span>
+                Password *
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength={6}
+                placeholder="Minimum 6 characters"
+              />
+            </div>
+
+            {/* Confirm Password */}
+            <div className="form-group">
+              <label htmlFor="confirmPassword">
+                <span className="label-icon">✅</span>
+                Confirm Password *
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                placeholder="Re-enter your password"
+              />
+            </div>
           </div>
-          <div className="form-group">
-            <label>Username *</label>
-            <input
-              type="text"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Email *</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Phone</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-          </div>
-          <div className="form-group">
-            <label>Role *</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-            >
-              <option value="passenger">Passenger</option>
-              <option value="driver">Driver</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Password *</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              minLength={6}
-            />
-          </div>
-          <div className="form-group">
-            <label>Confirm Password *</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-          </div>
+
           <button type="submit" disabled={loading} className="submit-btn">
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? (
+              <>
+                <span className="btn-icon">⏳</span>
+                Registering...
+              </>
+            ) : (
+              <>
+                <span className="btn-icon">🚀</span>
+                Create Account
+              </>
+            )}
           </button>
         </form>
+        
         <p className="login-link">
           Already have an account? <Link to="/login">Login here</Link>
         </p>
@@ -148,4 +215,3 @@ const Register = () => {
 };
 
 export default Register;
-
