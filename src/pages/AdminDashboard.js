@@ -148,7 +148,7 @@ const AdminDashboard = () => {
         <h2>Recent Activity</h2>
         <div className="activity-list">
           {recentActivity.length > 0 ? (
-            recentActivity.map((activity => (
+            recentActivity.map(activity => (
               <div key={activity.id} className="activity-item">
                 <div className="activity-icon">
                   {activity.action_type === 'login' ? '🔐' : 
