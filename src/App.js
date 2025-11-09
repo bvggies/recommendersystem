@@ -20,6 +20,7 @@ import AdminDrivers from './pages/AdminDrivers';
 import AdminPassengers from './pages/AdminPassengers';
 import AdminTrips from './pages/AdminTrips';
 import AdminDepartures from './pages/AdminDepartures';
+import TripDetail from './pages/TripDetail';
 import './App.css';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/trips" element={<Trips />} />
+              <Route path="/trips/:id" element={<TripDetail />} />
               <Route 
                 path="/dashboard" 
                 element={
