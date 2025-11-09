@@ -7,7 +7,6 @@ import './DriverDashboard.css';
 
 const DriverDashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalTrips: 0,
     activeTrips: 0,

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { tripService } from '../services/tripService';
 import { bookingService } from '../services/bookingService';
 import { recommendationService } from '../services/recommendationService';
 import api from '../services/api';

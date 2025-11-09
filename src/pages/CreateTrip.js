@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { tripService } from '../services/tripService';
 import api from '../services/api';
 import './CreateTrip.css';
 
 const CreateTrip = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
