@@ -113,5 +113,136 @@ router.get('/', authenticateToken, authorizeRoles('admin'), async (req, res) => 
   }
 });
 
+// Create user (admin only)
+router.post('/', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { username, email, phone, password, full_name, role } = req.body;
+
+    if (!username || !email || !password || !role) {
+      return res.status(400).json({ error: 'Username, email, password, and role are required' });
+    }
+
+    if (!['passenger', 'driver', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be passenger, driver, or admin' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const result = await pool.query(
+      `INSERT INTO users (username, email, phone, password_hash, full_name, role)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, username, email, phone, role, full_name, created_at`,
+      [username, email, phone || null, passwordHash, full_name || null, role]
+    );
+
+    res.status(201).json({ message: 'User created successfully', user: result.rows[0] });
+  } catch (error) {
+    console.error('Create user error:', error);
+    if (error.code === '23505') {
+      const field = error.constraint.includes('email') ? 'email' : 
+                   error.constraint.includes('username') ? 'username' : 'phone';
+      return res.status(400).json({ error: `User with this ${field} already exists` });
+    }
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Update user (admin only)
+router.put('/:id', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { username, email, phone, full_name, role, password } = req.body;
+
+    if (role && !['passenger', 'driver', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role. Must be passenger, driver, or admin' });
+    }
+
+    let passwordHash = null;
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      passwordHash = await bcrypt.hash(password, salt);
+    }
+
+    const updates = [];
+    const params = [];
+    let paramCount = 1;
+
+    if (username) {
+      updates.push(`username = $${paramCount++}`);
+      params.push(username);
+    }
+    if (email) {
+      updates.push(`email = $${paramCount++}`);
+      params.push(email);
+    }
+    if (phone !== undefined) {
+      updates.push(`phone = $${paramCount++}`);
+      params.push(phone);
+    }
+    if (full_name !== undefined) {
+      updates.push(`full_name = $${paramCount++}`);
+      params.push(full_name);
+    }
+    if (role) {
+      updates.push(`role = $${paramCount++}`);
+      params.push(role);
+    }
+    if (passwordHash) {
+      updates.push(`password_hash = $${paramCount++}`);
+      params.push(passwordHash);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    params.push(req.params.id);
+
+    const result = await pool.query(
+      `UPDATE users 
+       SET ${updates.join(', ')}
+       WHERE id = $${paramCount}
+       RETURNING id, username, email, phone, role, full_name, created_at`,
+      params
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User updated successfully', user: result.rows[0] });
+  } catch (error) {
+    console.error('Update user error:', error);
+    if (error.code === '23505') {
+      const field = error.constraint.includes('email') ? 'email' : 
+                   error.constraint.includes('username') ? 'username' : 'phone';
+      return res.status(400).json({ error: `User with this ${field} already exists` });
+    }
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Delete user (admin only)
+router.delete('/:id', authenticateToken, authorizeRoles('admin'), async (req, res) => {
+  try {
+    if (req.params.id == req.user.id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [req.params.id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
 module.exports = router;
 

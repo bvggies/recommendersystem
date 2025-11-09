@@ -104,14 +104,17 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create trip (driver only)
+// Create trip (driver or admin)
 router.post('/', authenticateToken, authorizeRoles('driver', 'admin'), async (req, res) => {
   try {
-    const { vehicle_id, route_id, origin, destination, fare, departure_time, total_seats, is_recurring, recurring_schedule } = req.body;
+    const { driver_id, vehicle_id, route_id, origin, destination, fare, departure_time, total_seats, is_recurring, recurring_schedule, status } = req.body;
 
     if (!origin || !destination || !fare || !departure_time || !total_seats) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
+
+    // Admin can specify driver_id, regular drivers use their own ID
+    const finalDriverId = req.user.role === 'admin' ? (driver_id || null) : req.user.id;
 
     // Get or create route
     let finalRouteId = route_id;
@@ -134,10 +137,10 @@ router.post('/', authenticateToken, authorizeRoles('driver', 'admin'), async (re
 
     // Create trip
     const result = await pool.query(
-      `INSERT INTO trips (driver_id, vehicle_id, route_id, origin, destination, fare, departure_time, total_seats, available_seats, is_recurring, recurring_schedule)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10)
+      `INSERT INTO trips (driver_id, vehicle_id, route_id, origin, destination, fare, departure_time, total_seats, available_seats, is_recurring, recurring_schedule, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9, $10, $11)
        RETURNING *`,
-      [req.user.id, vehicle_id || null, finalRouteId, origin, destination, fare, departure_time, total_seats, is_recurring || false, recurring_schedule || null]
+      [finalDriverId, vehicle_id || null, finalRouteId, origin, destination, fare, departure_time, total_seats, is_recurring || false, recurring_schedule || null, status || 'scheduled']
     );
 
     res.status(201).json({ message: 'Trip created successfully', trip: result.rows[0] });
@@ -147,10 +150,10 @@ router.post('/', authenticateToken, authorizeRoles('driver', 'admin'), async (re
   }
 });
 
-// Update trip (driver only)
+// Update trip (driver or admin)
 router.put('/:id', authenticateToken, authorizeRoles('driver', 'admin'), async (req, res) => {
   try {
-    const { origin, destination, fare, departure_time, available_seats, status } = req.body;
+    const { driver_id, origin, destination, fare, departure_time, available_seats, total_seats, status } = req.body;
 
     // Check if trip belongs to driver
     const tripCheck = await pool.query('SELECT driver_id FROM trips WHERE id = $1', [req.params.id]);
@@ -163,18 +166,57 @@ router.put('/:id', authenticateToken, authorizeRoles('driver', 'admin'), async (
       return res.status(403).json({ error: 'Not authorized to update this trip' });
     }
 
+    // Admin can change driver_id
+    const updates = [];
+    const params = [];
+    let paramCount = 1;
+
+    if (req.user.role === 'admin' && driver_id) {
+      updates.push(`driver_id = $${paramCount++}`);
+      params.push(driver_id);
+    }
+    if (origin) {
+      updates.push(`origin = $${paramCount++}`);
+      params.push(origin);
+    }
+    if (destination) {
+      updates.push(`destination = $${paramCount++}`);
+      params.push(destination);
+    }
+    if (fare) {
+      updates.push(`fare = $${paramCount++}`);
+      params.push(fare);
+    }
+    if (departure_time) {
+      updates.push(`departure_time = $${paramCount++}`);
+      params.push(departure_time);
+    }
+    if (available_seats !== undefined) {
+      updates.push(`available_seats = $${paramCount++}`);
+      params.push(available_seats);
+    }
+    if (total_seats !== undefined) {
+      updates.push(`total_seats = $${paramCount++}`);
+      params.push(total_seats);
+    }
+    if (status) {
+      updates.push(`status = $${paramCount++}`);
+      params.push(status);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    updates.push(`updated_at = CURRENT_TIMESTAMP`);
+    params.push(req.params.id);
+
     const result = await pool.query(
       `UPDATE trips 
-       SET origin = COALESCE($1, origin),
-           destination = COALESCE($2, destination),
-           fare = COALESCE($3, fare),
-           departure_time = COALESCE($4, departure_time),
-           available_seats = COALESCE($5, available_seats),
-           status = COALESCE($6, status),
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7
+       SET ${updates.join(', ')}
+       WHERE id = $${paramCount}
        RETURNING *`,
-      [origin, destination, fare, departure_time, available_seats, status, req.params.id]
+      params
     );
 
     res.json({ message: 'Trip updated successfully', trip: result.rows[0] });

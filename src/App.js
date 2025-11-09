@@ -14,6 +14,11 @@ import PassengerDashboard from './pages/PassengerDashboard';
 import DriverDashboard from './pages/DriverDashboard';
 import CreateTrip from './pages/CreateTrip';
 import MyTrips from './pages/MyTrips';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminVehicles from './pages/AdminVehicles';
+import AdminDrivers from './pages/AdminDrivers';
+import AdminPassengers from './pages/AdminPassengers';
+import AdminTrips from './pages/AdminTrips';
 import './App.css';
 
 function App() {
@@ -81,6 +86,46 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/vehicles" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminVehicles />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/drivers" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDrivers />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/passengers" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminPassengers />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/trips" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminTrips />
                   </ProtectedRoute>
                 } 
               />
