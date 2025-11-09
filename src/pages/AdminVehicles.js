@@ -43,7 +43,7 @@ const AdminVehicles = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && user?.role === 'admin') {

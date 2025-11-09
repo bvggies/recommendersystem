@@ -32,7 +32,7 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
