@@ -39,7 +39,9 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const { password, confirmPassword, ...userData } = formData;
+      // Remove confirmPassword but keep password
+      const { confirmPassword, ...userData } = formData;
+      console.log('Sending registration data:', { ...userData, password: '***' }); // Debug log
       await register(userData);
       navigate('/');
     } catch (err) {

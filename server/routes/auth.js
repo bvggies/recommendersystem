@@ -9,10 +9,17 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
+    // Log request body for debugging (remove password from log)
+    console.log('Registration request received:', {
+      ...req.body,
+      password: req.body.password ? '***' : undefined
+    });
+    
     const { email, phone, station_id, username, password, full_name, role } = req.body;
 
     // Validate input
     if (!username || !password || !email) {
+      console.log('Validation failed:', { username: !!username, password: !!password, email: !!email });
       return res.status(400).json({ error: 'Username, email, and password are required' });
     }
 
