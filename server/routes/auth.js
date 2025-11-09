@@ -16,14 +16,22 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Username, email, and password are required' });
     }
 
-    // Check if user exists
-    const userCheck = await pool.query(
-      'SELECT id FROM users WHERE email = $1 OR username = $2 OR phone = $3',
-      [email, username, phone]
-    );
+    // Check if user exists - handle null phone properly
+    let userCheck;
+    if (phone) {
+      userCheck = await pool.query(
+        'SELECT id FROM users WHERE email = $1 OR username = $2 OR phone = $3',
+        [email, username, phone]
+      );
+    } else {
+      userCheck = await pool.query(
+        'SELECT id FROM users WHERE email = $1 OR username = $2',
+        [email, username]
+      );
+    }
 
     if (userCheck.rows.length > 0) {
-      return res.status(400).json({ error: 'User already exists' });
+      return res.status(400).json({ error: 'User with this email, username, or phone already exists' });
     }
 
     // Hash password
@@ -60,7 +68,31 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    
+    // Provide more specific error messages
+    if (error.code === '23505') { // Unique constraint violation
+      if (error.constraint === 'users_email_key') {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+      if (error.constraint === 'users_username_key') {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+      if (error.constraint === 'users_phone_key') {
+        return res.status(400).json({ error: 'Phone number already exists' });
+      }
+      return res.status(400).json({ error: 'User already exists with this information' });
+    }
+    
+    if (error.code === '23514') { // Check constraint violation
+      return res.status(400).json({ error: 'Invalid role. Must be passenger, driver, or admin' });
+    }
+    
+    // Return detailed error in development, generic in production
+    const errorMessage = process.env.NODE_ENV === 'development' 
+      ? error.message 
+      : 'Registration failed. Please check your information and try again.';
+    
+    res.status(500).json({ error: errorMessage });
   }
 });
 

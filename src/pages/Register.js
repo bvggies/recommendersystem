@@ -43,7 +43,14 @@ const Register = () => {
       await register(userData);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed. Please try again.');
+      console.error('Registration error:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Registration failed. Please try again.';
+      setError(errorMessage);
+      
+      // Check if it's a network error
+      if (!err.response) {
+        setError('Cannot connect to server. Please make sure the backend is running.');
+      }
     } finally {
       setLoading(false);
     }
