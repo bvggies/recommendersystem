@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './AdminUsers.css';
@@ -20,13 +20,7 @@ const AdminPassengers = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    if (!authLoading && user?.role === 'admin') {
-      loadPassengers();
-    }
-  }, [authLoading, user]);
-
-  const loadPassengers = async () => {
+  const loadPassengers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/users?role=passenger');
@@ -45,7 +39,13 @@ const AdminPassengers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && user?.role === 'admin') {
+      loadPassengers();
+    }
+  }, [authLoading, user, loadPassengers]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { tripService } from '../services/tripService';
@@ -28,13 +28,7 @@ const AdminDepartures = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    if (!authLoading && user?.role === 'admin') {
-      loadData();
-    }
-  }, [authLoading, user]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [departuresRes, arrivalsRes, driversRes, vehiclesRes] = await Promise.all([
@@ -54,7 +48,13 @@ const AdminDepartures = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && user?.role === 'admin') {
+      loadData();
+    }
+  }, [authLoading, user, loadData]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

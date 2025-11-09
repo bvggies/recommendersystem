@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './AdminUsers.css';
@@ -20,13 +20,7 @@ const AdminDrivers = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    if (!authLoading && user?.role === 'admin') {
-      loadDrivers();
-    }
-  }, [authLoading, user]);
-
-  const loadDrivers = async () => {
+  const loadDrivers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/users?role=driver');
@@ -45,7 +39,13 @@ const AdminDrivers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (!authLoading && user?.role === 'admin') {
+      loadDrivers();
+    }
+  }, [authLoading, user, loadDrivers]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
