@@ -36,13 +36,13 @@ const AdminVehicles = () => {
       console.log('Error details:', {
         status,
         error: errorMsg,
-        userRole: user?.role,
         hasToken: !!localStorage.getItem('token')
       });
-      setError(`Failed to load vehicles (${status || 'Network Error'}): ${errorMsg}. Your role: ${user?.role || 'unknown'}`);
+      setError(`Failed to load vehicles (${status || 'Network Error'}): ${errorMsg}`);
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
