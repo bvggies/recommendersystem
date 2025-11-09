@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { tripService } from '../services/tripService';
 import './AdminDepartures.css';
 
 const AdminDepartures = () => {
+  const { user, loading: authLoading } = useAuth();
   const [departures, setDepartures] = useState([]);
   const [arrivals, setArrivals] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -27,8 +29,10 @@ const AdminDepartures = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!authLoading && user?.role === 'admin') {
+      loadData();
+    }
+  }, [authLoading, user]);
 
   const loadData = async () => {
     setLoading(true);
@@ -157,8 +161,16 @@ const AdminDepartures = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return <div className="admin-loading">Loading departures and arrivals...</div>;
+  }
+
+  if (user?.role !== 'admin') {
+    return (
+      <div className="admin-loading">
+        <p>Access denied. Admin privileges required.</p>
+      </div>
+    );
   }
 
   return (

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './AdminUsers.css';
 
 const AdminPassengers = () => {
+  const { user, loading: authLoading } = useAuth();
   const [passengers, setPassengers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -19,8 +21,10 @@ const AdminPassengers = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    loadPassengers();
-  }, []);
+    if (!authLoading && user?.role === 'admin') {
+      loadPassengers();
+    }
+  }, [authLoading, user]);
 
   const loadPassengers = async () => {
     setLoading(true);
@@ -29,7 +33,15 @@ const AdminPassengers = () => {
       setPassengers(res.data.users || []);
     } catch (error) {
       console.error('Failed to load passengers:', error);
-      setError('Failed to load passengers');
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      const status = error.response?.status;
+      console.log('Error details:', {
+        status,
+        error: errorMsg,
+        userRole: user?.role,
+        hasToken: !!localStorage.getItem('token')
+      });
+      setError(`Failed to load passengers (${status || 'Network Error'}): ${errorMsg}. Your role: ${user?.role || 'unknown'}`);
     } finally {
       setLoading(false);
     }
@@ -113,8 +125,17 @@ const AdminPassengers = () => {
     });
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return <div className="admin-loading">Loading passengers...</div>;
+  }
+
+  if (user?.role !== 'admin') {
+    return (
+      <div className="admin-loading">
+        <p>Access denied. Admin privileges required.</p>
+        <p>Current role: {user?.role || 'Not logged in'}</p>
+      </div>
+    );
   }
 
   return (

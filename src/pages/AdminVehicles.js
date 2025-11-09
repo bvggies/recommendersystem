@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './AdminVehicles.css';
 
 const AdminVehicles = () => {
+  const { user, loading: authLoading } = useAuth();
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,8 +21,10 @@ const AdminVehicles = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!authLoading && user?.role === 'admin') {
+      loadData();
+    }
+  }, [authLoading, user]);
 
   const loadData = async () => {
     setLoading(true);
@@ -33,7 +37,15 @@ const AdminVehicles = () => {
       setDrivers(driversRes.data.users || []);
     } catch (error) {
       console.error('Failed to load data:', error);
-      setError('Failed to load vehicles');
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      const status = error.response?.status;
+      console.log('Error details:', {
+        status,
+        error: errorMsg,
+        userRole: user?.role,
+        hasToken: !!localStorage.getItem('token')
+      });
+      setError(`Failed to load vehicles (${status || 'Network Error'}): ${errorMsg}. Your role: ${user?.role || 'unknown'}`);
     } finally {
       setLoading(false);
     }
@@ -114,8 +126,16 @@ const AdminVehicles = () => {
     });
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return <div className="admin-loading">Loading vehicles...</div>;
+  }
+
+  if (user?.role !== 'admin') {
+    return (
+      <div className="admin-loading">
+        <p>Access denied. Admin privileges required.</p>
+      </div>
+    );
   }
 
   return (

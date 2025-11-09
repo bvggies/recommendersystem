@@ -25,6 +25,14 @@ const AdminDashboard = () => {
       setRecentActivity(logsRes.data.logs || []);
     } catch (error) {
       console.error('Failed to load dashboard:', error);
+      const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+      const status = error.response?.status;
+      console.log('Dashboard error details:', {
+        status,
+        error: errorMsg,
+        userRole: user?.role,
+        hasToken: !!localStorage.getItem('token')
+      });
     } finally {
       setLoading(false);
     }
@@ -35,6 +43,21 @@ const AdminDashboard = () => {
       <div className="admin-loading">
         <div className="loading-spinner"></div>
         <p>Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (user?.role !== 'admin') {
+    return (
+      <div className="admin-loading">
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <h2>⚠️ Access Denied</h2>
+          <p>You need admin privileges to access this page.</p>
+          <p>Current role: <strong>{user?.role || 'Not logged in'}</strong></p>
+          <p style={{ marginTop: '1rem', color: '#666', fontSize: '0.9rem' }}>
+            To create an admin user, run: <code>npm run create-admin</code> in the server directory
+          </p>
+        </div>
       </div>
     );
   }
