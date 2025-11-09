@@ -6,7 +6,7 @@ import { recommendationService } from '../services/recommendationService';
 import './Home.css';
 
 const Home = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [trips, setTrips] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);

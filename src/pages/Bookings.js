@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { bookingService } from '../services/bookingService';
-import { useAuth } from '../context/AuthContext';
 import './Bookings.css';
 
 const Bookings = () => {
-  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 

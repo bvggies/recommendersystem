@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { recommendationService } from '../services/recommendationService';
-import { useAuth } from '../context/AuthContext';
 import './Recommendations.css';
 
 const Recommendations = () => {
-  const { user } = useAuth();
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -13,11 +11,7 @@ const Recommendations = () => {
     destination: ''
   });
 
-  useEffect(() => {
-    loadRecommendations();
-  }, []);
-
-  const loadRecommendations = async () => {
+  const loadRecommendations = useCallback(async () => {
     setLoading(true);
     try {
       const data = await recommendationService.getRecommendations(filters);
@@ -27,7 +21,11 @@ const Recommendations = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    loadRecommendations();
+  }, [loadRecommendations]);
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
