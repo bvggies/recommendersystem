@@ -110,14 +110,25 @@ async function seedDatabase() {
       console.log(`  ✓ Created vehicle: ${vehicle.registration_number} (${vehicle.vehicle_type})`);
     }
 
-    // Create sample routes
+    // Create sample routes (including reverse routes for arrivals)
     console.log('\nCreating sample routes...');
     const routes = [
+      // Departures from Nkawkaw
       { origin: 'Nkawkaw', destination: 'Accra', estimated_distance_km: 120, estimated_time_minutes: 150, base_fare: 25.00 },
       { origin: 'Nkawkaw', destination: 'Kumasi', estimated_distance_km: 85, estimated_time_minutes: 120, base_fare: 20.00 },
       { origin: 'Nkawkaw', destination: 'Koforidua', estimated_distance_km: 45, estimated_time_minutes: 60, base_fare: 12.00 },
       { origin: 'Nkawkaw', destination: 'Tema', estimated_distance_km: 135, estimated_time_minutes: 165, base_fare: 28.00 },
-      { origin: 'Nkawkaw', destination: 'Cape Coast', estimated_distance_km: 200, estimated_time_minutes: 240, base_fare: 40.00 }
+      { origin: 'Nkawkaw', destination: 'Cape Coast', estimated_distance_km: 200, estimated_time_minutes: 240, base_fare: 40.00 },
+      { origin: 'Nkawkaw', destination: 'Takoradi', estimated_distance_km: 250, estimated_time_minutes: 300, base_fare: 50.00 },
+      { origin: 'Nkawkaw', destination: 'Sunyani', estimated_distance_km: 180, estimated_time_minutes: 220, base_fare: 35.00 },
+      // Arrivals to Nkawkaw (reverse routes)
+      { origin: 'Accra', destination: 'Nkawkaw', estimated_distance_km: 120, estimated_time_minutes: 150, base_fare: 25.00 },
+      { origin: 'Kumasi', destination: 'Nkawkaw', estimated_distance_km: 85, estimated_time_minutes: 120, base_fare: 20.00 },
+      { origin: 'Koforidua', destination: 'Nkawkaw', estimated_distance_km: 45, estimated_time_minutes: 60, base_fare: 12.00 },
+      { origin: 'Tema', destination: 'Nkawkaw', estimated_distance_km: 135, estimated_time_minutes: 165, base_fare: 28.00 },
+      { origin: 'Cape Coast', destination: 'Nkawkaw', estimated_distance_km: 200, estimated_time_minutes: 240, base_fare: 40.00 },
+      { origin: 'Takoradi', destination: 'Nkawkaw', estimated_distance_km: 250, estimated_time_minutes: 300, base_fare: 50.00 },
+      { origin: 'Sunyani', destination: 'Nkawkaw', estimated_distance_km: 180, estimated_time_minutes: 220, base_fare: 35.00 }
     ];
 
     const routeIds = [];
@@ -140,6 +151,126 @@ async function seedDatabase() {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
+    // Helper function to generate trips for a date range
+    const generateTripsForMonth = (startDate, daysInMonth) => {
+      const trips = [];
+      const destinations = ['Accra', 'Kumasi', 'Koforidua', 'Tema', 'Cape Coast', 'Takoradi', 'Sunyani'];
+      const origins = ['Accra', 'Kumasi', 'Koforidua', 'Tema', 'Cape Coast', 'Takoradi', 'Sunyani'];
+      const fares = {
+        'Accra': 30.00,
+        'Kumasi': 22.00,
+        'Koforidua': 15.00,
+        'Tema': 32.00,
+        'Cape Coast': 45.00,
+        'Takoradi': 55.00,
+        'Sunyani': 40.00
+      };
+      
+      // Generate multiple trips per day
+      for (let day = 0; day < daysInMonth; day++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + day);
+        
+        // Departures from Nkawkaw (multiple times per day)
+        const departureTimes = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+        const departureCount = Math.floor(Math.random() * 5) + 3; // 3-7 departures per day
+        
+        for (let i = 0; i < departureCount; i++) {
+          const dest = destinations[Math.floor(Math.random() * destinations.length)];
+          const hour = departureTimes[Math.floor(Math.random() * departureTimes.length)];
+          const minute = Math.floor(Math.random() * 4) * 15; // 0, 15, 30, 45
+          
+          const departureTime = new Date(currentDate);
+          departureTime.setHours(hour, minute, 0, 0);
+          
+          // Only add future trips
+          if (departureTime > now) {
+            const driverIdx = Math.floor(Math.random() * driverIds.length);
+            const vehicleIdx = Math.floor(Math.random() * vehicleIds.length);
+            const routeIdx = routes.findIndex(r => r.origin === 'Nkawkaw' && r.destination === dest);
+            
+            if (routeIdx >= 0) {
+              const totalSeats = [15, 18, 25, 30, 4][Math.floor(Math.random() * 5)];
+              const availableSeats = Math.floor(Math.random() * totalSeats);
+              
+              trips.push({
+                driver_id: driverIds[driverIdx],
+                vehicle_id: vehicleIds[vehicleIdx],
+                route_id: routeIds[routeIdx],
+                origin: 'Nkawkaw',
+                destination: dest,
+                fare: fares[dest] || 25.00,
+                departure_time: departureTime,
+                total_seats: totalSeats,
+                available_seats: availableSeats,
+                status: 'scheduled'
+              });
+            }
+          }
+        }
+        
+        // Arrivals to Nkawkaw (multiple times per day)
+        const arrivalTimes = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+        const arrivalCount = Math.floor(Math.random() * 5) + 3; // 3-7 arrivals per day
+        
+        for (let i = 0; i < arrivalCount; i++) {
+          const orig = origins[Math.floor(Math.random() * origins.length)];
+          const hour = arrivalTimes[Math.floor(Math.random() * arrivalTimes.length)];
+          const minute = Math.floor(Math.random() * 4) * 15;
+          
+          const arrivalTime = new Date(currentDate);
+          arrivalTime.setHours(hour, minute, 0, 0);
+          
+          // Only add future trips
+          if (arrivalTime > now) {
+            const driverIdx = Math.floor(Math.random() * driverIds.length);
+            const vehicleIdx = Math.floor(Math.random() * vehicleIds.length);
+            const routeIdx = routes.findIndex(r => r.origin === orig && r.destination === 'Nkawkaw');
+            
+            if (routeIdx >= 0) {
+              const totalSeats = [15, 18, 25, 30, 4][Math.floor(Math.random() * 5)];
+              const availableSeats = Math.floor(Math.random() * totalSeats);
+              
+              trips.push({
+                driver_id: driverIds[driverIdx],
+                vehicle_id: vehicleIds[vehicleIdx],
+                route_id: routeIds[routeIdx],
+                origin: orig,
+                destination: 'Nkawkaw',
+                fare: fares[orig] || 25.00,
+                departure_time: arrivalTime,
+                total_seats: totalSeats,
+                available_seats: availableSeats,
+                status: 'scheduled'
+              });
+            }
+          }
+        }
+      }
+      
+      return trips;
+    };
+    
+    // Generate trips for this month (remaining days)
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const currentDay = now.getDate();
+    const remainingDaysThisMonth = daysInCurrentMonth - currentDay + 1;
+    
+    // Generate trips for next month
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+    const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+    const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
+    const nextMonthStart = new Date(nextYear, nextMonth, 1);
+    
+    const tripsThisMonth = generateTripsForMonth(today, remainingDaysThisMonth);
+    const tripsNextMonth = generateTripsForMonth(nextMonthStart, daysInNextMonth);
+    
+    console.log(`  📅 Generated ${tripsThisMonth.length} trips for remaining ${remainingDaysThisMonth} days of this month`);
+    console.log(`  📅 Generated ${tripsNextMonth.length} trips for ${daysInNextMonth} days of next month`);
+    
+    // Combine with existing trips
     const trips = [
       // Today's trips
       {
@@ -263,30 +394,59 @@ async function seedDatabase() {
         total_seats: 25,
         available_seats: 25,
         status: 'scheduled'
-      }
+      },
+      // Add generated trips for this month and next month
+      ...tripsThisMonth,
+      ...tripsNextMonth
     ];
 
-    for (const trip of trips) {
-      const result = await pool.query(
-        `INSERT INTO trips (driver_id, vehicle_id, route_id, origin, destination, fare, departure_time, total_seats, available_seats, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-         RETURNING id, departure_time`,
-        [
-          trip.driver_id,
-          trip.vehicle_id,
-          trip.route_id,
-          trip.origin,
-          trip.destination,
-          trip.fare,
-          trip.departure_time,
-          trip.total_seats,
-          trip.available_seats,
-          trip.status
-        ]
-      );
-      const depTime = new Date(result.rows[0].departure_time).toLocaleString();
-      console.log(`  ✓ Created trip: ${trip.origin} → ${trip.destination} (₵${trip.fare}) - ${depTime}`);
+    // Insert trips in batches for better performance
+    const batchSize = 50;
+    let insertedCount = 0;
+    
+    for (let i = 0; i < trips.length; i += batchSize) {
+      const batch = trips.slice(i, i + batchSize);
+      
+      for (const trip of batch) {
+        try {
+          const result = await pool.query(
+            `INSERT INTO trips (driver_id, vehicle_id, route_id, origin, destination, fare, departure_time, total_seats, available_seats, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+             RETURNING id, departure_time`,
+            [
+              trip.driver_id,
+              trip.vehicle_id,
+              trip.route_id,
+              trip.origin,
+              trip.destination,
+              trip.fare,
+              trip.departure_time,
+              trip.total_seats,
+              trip.available_seats,
+              trip.status
+            ]
+          );
+          
+          if (result.rows.length > 0) {
+            insertedCount++;
+            // Only log first few and last few trips to avoid console spam
+            if (insertedCount <= 5 || insertedCount > trips.length - 5) {
+              const depTime = new Date(result.rows[0].departure_time).toLocaleString();
+              console.log(`  ✓ Created trip: ${trip.origin} → ${trip.destination} (₵${trip.fare}) - ${depTime}`);
+            }
+          }
+        } catch (error) {
+          console.error(`  ✗ Failed to create trip: ${trip.origin} → ${trip.destination}`, error.message);
+        }
+      }
+      
+      // Progress indicator for large batches
+      if (trips.length > 100 && (i + batchSize) % 100 === 0) {
+        console.log(`  📊 Progress: ${Math.min(i + batchSize, trips.length)}/${trips.length} trips processed...`);
+      }
     }
+    
+    console.log(`  ✅ Successfully inserted ${insertedCount} trips`);
 
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📝 Sample Data Summary:');
