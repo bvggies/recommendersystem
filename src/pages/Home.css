@@ -54,6 +54,29 @@
   transform: translateY(-2px);
 }
 
+.dashboard-link-section {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.dashboard-link-btn {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.dashboard-link-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+}
+
 .recommendations-section,
 .trips-section {
   margin-bottom: 3rem;

@@ -10,6 +10,7 @@ import Trips from './pages/Trips';
 import Profile from './pages/Profile';
 import Recommendations from './pages/Recommendations';
 import Bookings from './pages/Bookings';
+import PassengerDashboard from './pages/PassengerDashboard';
 import './App.css';
 
 function App() {
@@ -24,6 +25,14 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/trips" element={<Trips />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <PassengerDashboard />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/recommendations" 
                 element={

@@ -77,6 +77,14 @@ const Home = () => {
         </div>
       </div>
 
+      {isAuthenticated && (
+        <div className="dashboard-link-section">
+          <Link to="/dashboard" className="dashboard-link-btn">
+            🚀 Go to Dashboard
+          </Link>
+        </div>
+      )}
+
       {isAuthenticated && recommendations.length > 0 && (
         <section className="recommendations-section">
           <h2>Recommended for You</h2>

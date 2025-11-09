@@ -24,6 +24,7 @@ const Navbar = () => {
               <li><Link to="/">Home</Link></li>
               {user?.role === 'passenger' && (
                 <>
+                  <li><Link to="/dashboard">Dashboard</Link></li>
                   <li><Link to="/trips">Find Trips</Link></li>
                   <li><Link to="/recommendations">Recommendations</Link></li>
                   <li><Link to="/bookings">My Bookings</Link></li>
