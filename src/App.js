@@ -11,6 +11,9 @@ import Profile from './pages/Profile';
 import Recommendations from './pages/Recommendations';
 import Bookings from './pages/Bookings';
 import PassengerDashboard from './pages/PassengerDashboard';
+import DriverDashboard from './pages/DriverDashboard';
+import CreateTrip from './pages/CreateTrip';
+import MyTrips from './pages/MyTrips';
 import './App.css';
 
 function App() {
@@ -30,6 +33,30 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <PassengerDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/driver/dashboard" 
+                element={
+                  <ProtectedRoute requiredRole="driver">
+                    <DriverDashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/trips/create" 
+                element={
+                  <ProtectedRoute requiredRole="driver">
+                    <CreateTrip />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/trips/my-trips" 
+                element={
+                  <ProtectedRoute requiredRole="driver">
+                    <MyTrips />
                   </ProtectedRoute>
                 } 
               />
