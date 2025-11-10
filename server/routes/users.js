@@ -31,6 +31,16 @@ router.put('/profile', authenticateToken, async (req, res) => {
   try {
     const { full_name, phone, fare_range_min, fare_range_max, preferred_routes, profile_picture } = req.body;
 
+    // Convert empty strings to null for optional fields
+    const processedFullName = full_name && full_name.trim() !== '' ? full_name.trim() : null;
+    const processedPhone = phone && phone.trim() !== '' ? phone.trim() : null;
+    const processedFareMin = fare_range_min !== '' && fare_range_min !== null && fare_range_min !== undefined 
+      ? (isNaN(parseFloat(fare_range_min)) ? null : parseFloat(fare_range_min)) : null;
+    const processedFareMax = fare_range_max !== '' && fare_range_max !== null && fare_range_max !== undefined 
+      ? (isNaN(parseFloat(fare_range_max)) ? null : parseFloat(fare_range_max)) : null;
+    const processedPreferredRoutes = Array.isArray(preferred_routes) ? preferred_routes : null;
+    const processedProfilePicture = profile_picture && profile_picture.trim() !== '' ? profile_picture.trim() : null;
+
     const result = await pool.query(
       `UPDATE users 
        SET full_name = COALESCE($1, full_name),
@@ -42,13 +52,15 @@ router.put('/profile', authenticateToken, async (req, res) => {
            updated_at = CURRENT_TIMESTAMP
        WHERE id = $7
        RETURNING id, username, email, phone, full_name, profile_picture, fare_range_min, fare_range_max, preferred_routes`,
-      [full_name, phone, fare_range_min, fare_range_max, preferred_routes, profile_picture, req.user.id]
+      [processedFullName, processedPhone, processedFareMin, processedFareMax, processedPreferredRoutes, processedProfilePicture, req.user.id]
     );
 
     res.json({ message: 'Profile updated successfully', user: result.rows[0] });
   } catch (error) {
     console.error('Update profile error:', error);
-    res.status(500).json({ error: 'Failed to update profile' });
+    // Return more detailed error message
+    const errorMessage = error.message || 'Failed to update profile';
+    res.status(500).json({ error: 'Failed to update profile', details: errorMessage });
   }
 });
 

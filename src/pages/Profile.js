@@ -95,7 +95,10 @@ const Profile = () => {
       loadProfile();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage(error.response?.data?.error || 'Failed to update profile');
+      const errorMsg = error.response?.data?.details || error.response?.data?.error || error.message || 'Failed to update profile';
+      console.error('Profile update error:', error);
+      setMessage(errorMsg);
+      setTimeout(() => setMessage(''), 5000);
     }
   };
 
