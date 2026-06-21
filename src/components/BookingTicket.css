@@ -49,6 +49,27 @@
   color: #1e293b;
 }
 
+.ticket-passenger {
+  background: white;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.ticket-passenger h4 {
+  margin: 0 0 0.5rem;
+  color: #1e40af;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.ticket-passenger p {
+  margin: 0.25rem 0;
+  color: #475569;
+}
+
 .ticket-meta p {
   margin: 0.35rem 0;
   color: #475569;

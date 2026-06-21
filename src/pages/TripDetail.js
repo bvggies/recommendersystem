@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { tripService } from '../services/tripService';
 import { bookingService } from '../services/bookingService';
-import PaymentModal from '../components/PaymentModal';
+import { paymentService } from '../services/paymentService';
 import TripRouteMap from '../components/TripRouteMap';
 import LiveTripTracking from '../components/LiveTripTracking';
 import BookingTicket from '../components/BookingTicket';
@@ -19,7 +19,7 @@ const TripDetail = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [existingBooking, setExistingBooking] = useState(null);
-  const [showPayment, setShowPayment] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   const loadTrip = useCallback(async () => {
     setLoading(true);
@@ -54,15 +54,7 @@ const TripDetail = () => {
   }, [id, isAuthenticated, loadTrip, checkExistingBooking]);
 
 
-  const handlePaymentSuccess = (result) => {
-    setSuccess('Payment successful! Your booking is confirmed.');
-    setExistingBooking(result.booking);
-    setShowPayment(false);
-    loadTrip();
-    checkExistingBooking();
-  };
-
-  const handleProceedToPayment = () => {
+  const handleProceedToPayment = async () => {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/trips/${id}` } });
       return;
@@ -81,7 +73,31 @@ const TripDetail = () => {
       return;
     }
 
-    setShowPayment(true);
+    setPaying(true);
+
+    try {
+      const result = await paymentService.initializePayment({
+        trip_id: trip.id,
+        seats_booked: seatsToBook,
+        payment_method: 'paystack'
+      });
+
+      if (result.payment?.authorization_url) {
+        window.location.href = result.payment.authorization_url;
+        return;
+      }
+
+      if (result.payment?.reference) {
+        window.location.href = `/payment/callback?reference=${encodeURIComponent(result.payment.reference)}`;
+        return;
+      }
+
+      setError('Unable to start payment. Please try again.');
+    } catch (paymentError) {
+      setError(paymentError.response?.data?.error || 'Failed to start payment');
+    } finally {
+      setPaying(false);
+    }
   };
 
   const handleCancelBooking = async () => {
@@ -259,15 +275,6 @@ const TripDetail = () => {
           )}
         </div>
 
-        {showPayment && (
-          <PaymentModal
-            trip={trip}
-            seatsToBook={seatsToBook}
-            onClose={() => setShowPayment(false)}
-            onSuccess={handlePaymentSuccess}
-          />
-        )}
-
         {/* Booking Section */}
         {existingBooking ? (
           <div className={`booking-card existing-booking ${isHistoricalBooking ? 'trip-history' : ''}`}>
@@ -359,9 +366,14 @@ const TripDetail = () => {
                   </div>
                 </div>
 
-                <button onClick={handleProceedToPayment} className="book-btn">
-                  💳 Pay & Book {seatsToBook} Seat{seatsToBook > 1 ? 's' : ''}
+                <button
+                  onClick={handleProceedToPayment}
+                  className="book-btn"
+                  disabled={paying}
+                >
+                  {paying ? 'Redirecting to Paystack...' : `💳 Pay & Book ${seatsToBook} Seat${seatsToBook > 1 ? 's' : ''}`}
                 </button>
+                <p className="payment-redirect-note">You will be redirected to Paystack to complete payment securely.</p>
               </>
             )}
           </div>

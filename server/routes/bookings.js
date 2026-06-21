@@ -328,10 +328,13 @@ router.get('/:id/ticket', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT b.*, t.origin, t.destination, t.departure_time, t.status AS trip_status,
-              u.full_name AS driver_name, v.vehicle_type, v.registration_number
+              t.id AS trip_id,
+              d.full_name AS driver_name, v.vehicle_type, v.registration_number,
+              p.full_name AS passenger_name, p.email AS passenger_email, p.phone AS passenger_phone
        FROM bookings b
        JOIN trips t ON b.trip_id = t.id
-       JOIN users u ON t.driver_id = u.id
+       JOIN users d ON t.driver_id = d.id
+       JOIN users p ON b.passenger_id = p.id
        LEFT JOIN vehicles v ON t.vehicle_id = v.id
        WHERE b.id = $1`,
       [req.params.id]
@@ -363,7 +366,11 @@ router.get('/:id/ticket', authenticateToken, async (req, res) => {
     res.json({
       ticket: {
         booking_id: booking.id,
+        trip_id: booking.trip_id,
         passenger_id: booking.passenger_id,
+        passenger_name: booking.passenger_name,
+        passenger_email: booking.passenger_email,
+        passenger_phone: booking.passenger_phone,
         seats_booked: booking.seats_booked,
         origin: booking.origin,
         destination: booking.destination,
@@ -372,13 +379,19 @@ router.get('/:id/ticket', authenticateToken, async (req, res) => {
         driver_name: booking.driver_name,
         vehicle_type: booking.vehicle_type,
         registration_number: booking.registration_number,
+        payment_reference: booking.payment_reference,
         checked_in_at: booking.checked_in_at,
         verified: Boolean(booking.checked_in_at),
         is_historical: new Date(booking.departure_time) < new Date()
           || booking.trip_status === 'completed'
           || booking.booking_status === 'completed',
         boarding_token: boardingToken,
-        qr_payload: buildTicketPayload(booking.id, boardingToken)
+        qr_payload: buildTicketPayload(booking.id, boardingToken, {
+          full_name: booking.passenger_name,
+          phone: booking.passenger_phone,
+          email: booking.passenger_email
+        }),
+        check_in_code: `NKTS:${booking.id}:${boardingToken}`
       }
     });
   } catch (error) {

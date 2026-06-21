@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { paymentService } from '../services/paymentService';
 import './PaymentCallback.css';
 
 const PaymentCallback = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('Verifying your payment...');
@@ -18,25 +19,47 @@ const PaymentCallback = () => {
     }
 
     paymentService.verifyPayment(reference)
-      .then(() => {
+      .then((result) => {
         setStatus('success');
-        setMessage('Payment successful. Your booking is confirmed.');
+        setMessage('Payment successful! Generating your boarding ticket...');
+
+        const bookingId = result.booking?.id;
+        if (bookingId) {
+          setTimeout(() => {
+            navigate(`/bookings/${bookingId}/ticket`, {
+              replace: true,
+              state: {
+                paymentSuccess: true,
+                tripId: result.booking.trip_id
+              }
+            });
+          }, 1200);
+        }
       })
       .catch((error) => {
         setStatus('error');
         setMessage(error.response?.data?.error || 'Payment verification failed.');
       });
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   return (
     <div className="payment-callback-page">
       <div className={`payment-callback-card ${status}`}>
-        <h1>{status === 'success' ? 'Payment Successful' : status === 'error' ? 'Payment Issue' : 'Processing Payment'}</h1>
+        <h1>
+          {status === 'success'
+            ? 'Payment Successful'
+            : status === 'error'
+            ? 'Payment Issue'
+            : 'Processing Payment'}
+        </h1>
         <p>{message}</p>
-        <div className="payment-callback-actions">
-          <Link to="/bookings" className="btn-primary">View My Bookings</Link>
-          <Link to="/trips" className="btn-secondary">Browse Trips</Link>
-        </div>
+        {status === 'loading' && <div className="payment-spinner" />}
+        {status === 'error' && (
+          <div className="payment-callback-actions">
+            <Link to="/trips" className="btn-primary">Browse Trips</Link>
+            <Link to="/bookings" className="btn-secondary">My Bookings</Link>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -105,6 +105,20 @@ const BookingTicket = ({ bookingId, compact = false, historical = false }) => {
         <strong>{ticket.destination}</strong>
       </div>
 
+      <div className="ticket-passenger">
+        <h4>Passenger</h4>
+        <p><strong>Name:</strong> {ticket.passenger_name || 'N/A'}</p>
+        {ticket.passenger_phone && (
+          <p><strong>Phone:</strong> {ticket.passenger_phone}</p>
+        )}
+        {ticket.passenger_email && (
+          <p><strong>Email:</strong> {ticket.passenger_email}</p>
+        )}
+        {ticket.payment_reference && (
+          <p><strong>Payment ref:</strong> {ticket.payment_reference}</p>
+        )}
+      </div>
+
       <div className="ticket-meta">
         <p><strong>Departure:</strong> {formatDate(ticket.departure_time)}</p>
         <p><strong>Seats:</strong> {ticket.seats_booked}</p>
@@ -124,7 +138,7 @@ const BookingTicket = ({ bookingId, compact = false, historical = false }) => {
             ? 'Permanent QR record — drivers can verify this code anytime'
             : 'Show this QR code at boarding'}
         </p>
-        <p className="ticket-code">{ticket.qr_payload}</p>
+        <p className="ticket-code">{ticket.check_in_code || ticket.qr_payload}</p>
       </div>
     </div>
   );

@@ -13,9 +13,24 @@ test('generateBoardingToken returns 48-char hex string', () => {
 
 test('buildTicketPayload and parseTicketPayload round-trip', () => {
   const token = generateBoardingToken();
-  const payload = buildTicketPayload(42, token);
+  const payload = buildTicketPayload(42, token, {
+    full_name: 'Jane Doe',
+    phone: '0241234567',
+    email: 'jane@example.com'
+  });
   const parsed = parseTicketPayload(payload);
 
+  assert.equal(parsed.bookingId, 42);
+  assert.equal(parsed.boardingToken, token);
+
+  const json = JSON.parse(payload);
+  assert.equal(json.passenger_name, 'Jane Doe');
+  assert.equal(json.phone, '0241234567');
+});
+
+test('parseTicketPayload accepts legacy NKTS format', () => {
+  const token = generateBoardingToken();
+  const parsed = parseTicketPayload(`NKTS:42:${token}`);
   assert.equal(parsed.bookingId, 42);
   assert.equal(parsed.boardingToken, token);
 });

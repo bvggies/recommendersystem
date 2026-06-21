@@ -13,3 +13,43 @@
   color: #2563eb;
   text-decoration: none;
 }
+
+.ticket-success-banner {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border: 1px solid #86efac;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.ticket-success-banner h2 {
+  margin: 0 0 0.5rem;
+  color: #166534;
+}
+
+.ticket-success-banner p {
+  margin: 0;
+  color: #15803d;
+}
+
+.ticket-page-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+}
+
+.ticket-action-link {
+  display: inline-block;
+  padding: 0.65rem 1rem;
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.ticket-action-link.secondary {
+  background: #f1f5f9;
+  color: #334155;
+}

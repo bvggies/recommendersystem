@@ -429,6 +429,18 @@
   transform: scale(0.98);
 }
 
+.payment-redirect-note {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.book-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 /* Existing Booking */
 .existing-booking {
   background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
