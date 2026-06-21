@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { paymentService } from '../services/paymentService';
+import { getApiErrorMessage } from '../utils/apiError';
 import './PaymentCallback.css';
 
 const PaymentCallback = () => {
@@ -46,7 +47,7 @@ const PaymentCallback = () => {
           setMessage('Please log in again to complete your booking verification.');
           return;
         }
-        setMessage(error.response?.data?.error || 'Payment verification failed.');
+        setMessage(getApiErrorMessage(error, 'Payment verification failed.'));
       });
   }, [searchParams, navigate]);
 

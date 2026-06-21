@@ -1,12 +1,38 @@
 {
   "version": 2,
   "installCommand": "npm install && npm install --prefix server",
-  "buildCommand": "npm run build",
-  "outputDirectory": "build",
-  "rewrites": [
+  "builds": [
     {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "src": "server/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server/server.js"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/payment/callback",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/bookings/([^/]+)/ticket",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "env": {
