@@ -387,9 +387,17 @@ router.get('/:id/ticket', authenticateToken, async (req, res) => {
           || booking.booking_status === 'completed',
         boarding_token: boardingToken,
         qr_payload: buildTicketPayload(booking.id, boardingToken, {
-          full_name: booking.passenger_name,
+          passenger_name: booking.passenger_name,
           phone: booking.passenger_phone,
-          email: booking.passenger_email
+          email: booking.passenger_email,
+          origin: booking.origin,
+          destination: booking.destination,
+          departure_time: booking.departure_time,
+          seats_booked: booking.seats_booked,
+          driver_name: booking.driver_name,
+          vehicle_type: booking.vehicle_type,
+          registration_number: booking.registration_number,
+          payment_reference: booking.payment_reference
         }),
         check_in_code: `NKTS:${booking.id}:${boardingToken}`
       }
