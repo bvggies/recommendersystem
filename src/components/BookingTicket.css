@@ -1,0 +1,121 @@
+.booking-ticket {
+  background: linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
+  border: 2px dashed #2563eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.booking-ticket.compact {
+  padding: 1rem;
+}
+
+.booking-ticket.loading,
+.booking-ticket.error {
+  padding: 1rem;
+  text-align: center;
+  color: #666;
+}
+
+.booking-ticket.error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ticket-header h3 {
+  margin: 0;
+  color: #1e40af;
+}
+
+.ticket-id {
+  font-weight: 600;
+  color: #64748b;
+}
+
+.ticket-route {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #1e293b;
+}
+
+.ticket-meta p {
+  margin: 0.35rem 0;
+  color: #475569;
+}
+
+.ticket-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #bfdbfe;
+}
+
+.ticket-qr-hint {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.ticket-checked-in {
+  margin-top: 0.5rem;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.booking-ticket.historical {
+  background: linear-gradient(135deg, #fafafa 0%, #f1f5f9 100%);
+  border-color: #94a3b8;
+}
+
+.verification-badge {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.verification-badge.verified {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.verification-badge.pending {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.verification-badge p {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.verification-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.ticket-code {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  word-break: break-all;
+  font-family: monospace;
+}

@@ -93,6 +93,10 @@ Create `server/.env`:
 DATABASE_URL=your_neon_postgresql_connection_string
 JWT_SECRET=your_jwt_secret_key
 GROQ_API_KEY=your_groq_api_key
+PAYSTACK_SECRET_KEY=your_paystack_secret_key
+PAYSTACK_PUBLIC_KEY=your_paystack_public_key
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+FRONTEND_URL=http://localhost:3000
 PORT=5000
 NODE_ENV=development
 ```

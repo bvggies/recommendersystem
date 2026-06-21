@@ -55,11 +55,31 @@ CREATE TABLE IF NOT EXISTS trips (
     departure_time TIMESTAMP NOT NULL,
     available_seats INTEGER NOT NULL,
     total_seats INTEGER NOT NULL,
-    status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in-progress', 'completed', 'cancelled')),
+    status VARCHAR(20) DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'in-progress', 'completed', 'cancelled', 'paused')),
     is_recurring BOOLEAN DEFAULT FALSE,
     recurring_schedule JSONB,
+    status_reason VARCHAR(50),
+    status_note TEXT,
+    delay_minutes INTEGER DEFAULT 0,
+    delay_reason TEXT,
+    estimated_arrival TIMESTAMP,
+    last_latitude DECIMAL(10, 8),
+    last_longitude DECIMAL(11, 8),
+    last_location_at TIMESTAMP,
+    tracking_active BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS trip_location_updates (
+    id SERIAL PRIMARY KEY,
+    trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    driver_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    latitude DECIMAL(10, 8) NOT NULL,
+    longitude DECIMAL(11, 8) NOT NULL,
+    heading DECIMAL(5, 2),
+    speed_kmh DECIMAL(5, 2),
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Bookings Table
@@ -68,10 +88,13 @@ CREATE TABLE IF NOT EXISTS bookings (
     passenger_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     trip_id INTEGER REFERENCES trips(id) ON DELETE CASCADE,
     seats_booked INTEGER DEFAULT 1,
-    booking_status VARCHAR(20) DEFAULT 'confirmed' CHECK (booking_status IN ('confirmed', 'cancelled', 'completed')),
+    booking_status VARCHAR(20) DEFAULT 'pending' CHECK (booking_status IN ('pending', 'confirmed', 'cancelled', 'completed')),
     payment_status VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'refunded')),
     payment_method VARCHAR(50),
     payment_reference VARCHAR(255),
+    boarding_token VARCHAR(64) UNIQUE,
+    checked_in_at TIMESTAMP,
+    checked_in_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,0 +1,152 @@
+.driver-trip-manage {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.manage-header h1 {
+  margin: 0.5rem 0;
+  color: #1e293b;
+}
+
+.manage-header p {
+  color: #64748b;
+}
+
+.back-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.manage-grid {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .manage-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .manage-grid .manage-card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.manage-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.manage-card h2 {
+  margin-top: 0;
+  color: #334155;
+}
+
+.status-line {
+  color: #475569;
+  margin: 0.35rem 0;
+}
+
+.status-line.live {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.manage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.delay-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.delay-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.delay-form input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-warning,
+.btn-danger,
+.link-btn {
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary,
+.link-btn {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.current-delay {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fef3c7;
+  border-radius: 6px;
+  color: #92400e;
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin: 1rem 0;
+}
+
+.alert.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.alert.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.driver-trip-manage.loading,
+.driver-trip-manage.error {
+  text-align: center;
+  padding: 3rem;
+}

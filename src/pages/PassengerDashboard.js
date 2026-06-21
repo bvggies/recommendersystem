@@ -190,6 +190,10 @@ const PassengerDashboard = () => {
             <div className="action-icon">📋</div>
             <span>My Bookings</span>
           </Link>
+          <Link to="/bookings" state={{ filter: 'history' }} className="action-card">
+            <div className="action-icon">📜</div>
+            <span>Trip History</span>
+          </Link>
           <Link to="/profile" className="action-card">
             <div className="action-icon">👤</div>
             <span>Profile</span>
@@ -210,7 +214,7 @@ const PassengerDashboard = () => {
             {upcomingBookings.length > 0 ? (
               <div className="trips-list">
                 {upcomingBookings.map(booking => (
-                  <div key={booking.id} className="trip-card-mini">
+                  <Link key={booking.id} to={`/trips/${booking.trip_id}`} className="trip-card-mini trip-card-link">
                     <div className="trip-route">
                       <span className="route-from">{booking.origin}</span>
                       <span className="route-arrow">→</span>
@@ -224,13 +228,51 @@ const PassengerDashboard = () => {
                     <div className="trip-status-badge confirmed">
                       {booking.booking_status}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
               <div className="empty-state">
                 <p>No upcoming trips</p>
                 <Link to="/trips" className="btn-primary">Book a Trip</Link>
+              </div>
+            )}
+          </div>
+
+          {/* Trip History */}
+          <div className="dashboard-section">
+            <div className="section-header">
+              <h2>📋 Trip History</h2>
+              <Link to="/bookings" state={{ filter: 'history' }} className="view-all">View All</Link>
+            </div>
+            {recentActivity.filter(a =>
+              a.payment_status === 'paid' &&
+              (new Date(a.departure_time) <= new Date() || a.trip_status === 'completed')
+            ).slice(0, 3).length > 0 ? (
+              <div className="trips-list">
+                {recentActivity
+                  .filter(a =>
+                    a.payment_status === 'paid' &&
+                    (new Date(a.departure_time) <= new Date() || a.trip_status === 'completed')
+                  )
+                  .slice(0, 3)
+                  .map(booking => (
+                    <Link key={booking.id} to={`/trips/${booking.trip_id}`} className="trip-card-mini trip-card-link history">
+                      <div className="trip-route">
+                        <span className="route-from">{booking.origin}</span>
+                        <span className="route-arrow">→</span>
+                        <span className="route-to">{booking.destination}</span>
+                      </div>
+                      <div className="trip-details-mini">
+                        <span className="trip-date">{formatDate(booking.departure_time)}</span>
+                        {booking.verified && <span className="verified-badge">✅ Verified</span>}
+                      </div>
+                    </Link>
+                  ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <p>No trip history yet</p>
               </div>
             )}
           </div>

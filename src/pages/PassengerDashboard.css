@@ -258,6 +258,22 @@
   transform: translateX(5px);
 }
 
+.trip-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.trip-card-mini.history {
+  border-left-color: #94a3b8;
+}
+
+.verified-badge {
+  color: #15803d;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
 .trip-route {
   display: flex;
   align-items: center;

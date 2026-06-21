@@ -1,65 +1,82 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { tripService } from '../services/tripService';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { tripService, buildTripFilters } from '../services/tripService';
 import './Trips.css';
 
+const EMPTY_FILTERS = {
+  origin: '',
+  destination: '',
+  min_fare: '',
+  max_fare: '',
+  vehicle_type: '',
+  departure_date: ''
+};
+
 const Trips = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hasSearched, setHasSearched] = useState(false);
   const [filters, setFilters] = useState({
-    origin: '',
-    destination: '',
-    min_fare: '',
-    max_fare: '',
-    vehicle_type: '',
-    departure_date: ''
+    ...EMPTY_FILTERS,
+    origin: searchParams.get('origin') || '',
+    destination: searchParams.get('destination') || '',
+    min_fare: searchParams.get('min_fare') || '',
+    max_fare: searchParams.get('max_fare') || '',
+    vehicle_type: searchParams.get('vehicle_type') || '',
+    departure_date: searchParams.get('departure_date') || ''
   });
 
-  useEffect(() => {
-    loadTrips();
-  }, []);
-
-  const loadTrips = async () => {
+  const fetchTrips = useCallback(async (filterValues, searched = false) => {
     setLoading(true);
     try {
-      const { trips: tripsData } = await tripService.getTrips();
-      setTrips(tripsData);
+      const cleanFilters = buildTripFilters(filterValues);
+      const requestFilters = {
+        ...cleanFilters,
+        status: 'scheduled'
+      };
+
+      const { trips: tripsData } = await tripService.getTrips(requestFilters);
+      setTrips(tripsData || []);
+      setHasSearched(searched || Object.keys(cleanFilters).length > 0);
     } catch (error) {
       console.error('Failed to load trips:', error);
+      setTrips([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const urlFilters = {
+      ...EMPTY_FILTERS,
+      origin: searchParams.get('origin') || '',
+      destination: searchParams.get('destination') || '',
+      min_fare: searchParams.get('min_fare') || '',
+      max_fare: searchParams.get('max_fare') || '',
+      vehicle_type: searchParams.get('vehicle_type') || '',
+      departure_date: searchParams.get('departure_date') || ''
+    };
+
+    setFilters(urlFilters);
+    fetchTrips(urlFilters, searchParams.toString().length > 0);
+  }, [searchParams, fetchTrips]);
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 
-  const handleSearch = async () => {
-    setLoading(true);
-    try {
-      const cleanFilters = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== '')
-      );
-      const { trips: tripsData } = await tripService.getTrips(cleanFilters);
-      setTrips(tripsData);
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSearch = (e) => {
+    e?.preventDefault();
+
+    const cleanFilters = buildTripFilters(filters);
+    const params = new URLSearchParams(cleanFilters);
+    setSearchParams(params);
   };
 
   const handleReset = () => {
-    setFilters({
-      origin: '',
-      destination: '',
-      min_fare: '',
-      max_fare: '',
-      vehicle_type: '',
-      departure_date: ''
-    });
-    loadTrips();
+    setFilters({ ...EMPTY_FILTERS });
+    setSearchParams({});
   };
 
   return (
@@ -69,7 +86,7 @@ const Trips = () => {
         <p>Search and filter available trips</p>
       </div>
 
-      <div className="filters-section">
+      <form className="filters-section" onSubmit={handleSearch}>
         <div className="filters-grid">
           <div className="filter-group">
             <label>Origin</label>
@@ -136,10 +153,10 @@ const Trips = () => {
           </div>
         </div>
         <div className="filter-actions">
-          <button onClick={handleSearch} className="search-btn">Search</button>
-          <button onClick={handleReset} className="reset-btn">Reset</button>
+          <button type="submit" className="search-btn">Search</button>
+          <button type="button" onClick={handleReset} className="reset-btn">Reset</button>
         </div>
-      </div>
+      </form>
 
       <div className="trips-results">
         {loading ? (
@@ -152,7 +169,11 @@ const Trips = () => {
           </div>
         ) : (
           <div className="no-results">
-            <p>No trips found matching your criteria.</p>
+            <p>
+              {hasSearched
+                ? 'No trips found matching your search. Try different locations or dates.'
+                : 'No scheduled trips are available right now.'}
+            </p>
           </div>
         )}
       </div>
@@ -186,4 +207,3 @@ const TripCard = ({ trip }) => {
 };
 
 export default Trips;
-

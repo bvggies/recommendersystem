@@ -15,6 +15,7 @@
     "groq-sdk": "^0.7.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.3",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-icons": "^5.0.1",
@@ -26,7 +27,9 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "react-scripts test --watchAll=false",
+    "test:server": "cd server && npm test",
+    "test:all": "npm run test:server && npm test",
     "eject": "react-scripts eject",
     "server": "cd server && node server.js",
     "dev": "concurrently \"npm start\" \"npm run server\""

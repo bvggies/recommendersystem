@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { tripService } from '../services/tripService';
+import { tripService, buildTripFilters } from '../services/tripService';
 import { recommendationService } from '../services/recommendationService';
 import './Home.css';
 
 const Home = () => {
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [departures, setDepartures] = useState([]);
   const [arrivals, setArrivals] = useState([]);
@@ -70,20 +71,12 @@ const Home = () => {
     }
   };
 
-  const handleSearch = async () => {
-    setLoading(true);
-    try {
-      const { trips: tripsData } = await tripService.getTrips(searchFilters);
-      if (searchFilters.origin === 'Nkawkaw' || !searchFilters.origin) {
-        setDepartures(tripsData.filter(t => new Date(t.departure_time) > new Date()));
-      } else {
-        setArrivals(tripsData.filter(t => new Date(t.departure_time) > new Date()));
-      }
-    } catch (error) {
-      console.error('Search failed:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSearch = (e) => {
+    e?.preventDefault();
+
+    const cleanFilters = buildTripFilters(searchFilters);
+    const params = new URLSearchParams(cleanFilters);
+    navigate(params.toString() ? `/trips?${params.toString()}` : '/trips');
   };
 
   const formatTime = (dateString) => {
@@ -153,7 +146,7 @@ const Home = () => {
       </div>
 
       {/* Quick Search */}
-      <div className="quick-search-section">
+      <form className="quick-search-section" onSubmit={handleSearch}>
         <div className="search-box">
           <input
             type="text"
@@ -167,9 +160,9 @@ const Home = () => {
             value={searchFilters.destination}
             onChange={(e) => setSearchFilters({ ...searchFilters, destination: e.target.value })}
           />
-          <button onClick={handleSearch}>🔍 Search</button>
+          <button type="submit">🔍 Search</button>
         </div>
-      </div>
+      </form>
 
       {/* Dashboard Link for Authenticated Users */}
       {isAuthenticated && (

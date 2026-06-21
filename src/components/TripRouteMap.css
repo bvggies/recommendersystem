@@ -1,0 +1,54 @@
+.trip-route-map {
+  margin-top: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.trip-route-map.loading,
+.trip-route-map.error {
+  padding: 1rem;
+  color: #666;
+}
+
+.trip-route-map.error {
+  color: #c33;
+  background: #fff5f5;
+}
+
+.route-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.route-stat-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.route-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.trip-route-map iframe {
+  width: 100%;
+  min-height: 320px;
+  border: 0;
+}
+
+.route-map-placeholder {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #666;
+  background: #f3f4f6;
+}

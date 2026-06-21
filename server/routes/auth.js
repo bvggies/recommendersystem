@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const pool = require('../db/connection');
 const { authenticateToken } = require('../middleware/auth');
 const { logActivity, getClientIp } = require('../utils/activityLogger');
+const { getJwtSecret } = require('../utils/jwtSecret');
 
 const router = express.Router();
 
@@ -59,7 +60,7 @@ router.post('/register', async (req, res) => {
     // Generate token
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'your-secret-key',
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
 
@@ -138,7 +139,7 @@ router.post('/login', async (req, res) => {
     // Generate token
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'your-secret-key',
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
 
@@ -180,7 +181,7 @@ router.get('/me', authenticateToken, async (req, res) => {
     // Generate new token with updated role (in case role changed in database)
     const token = jwt.sign(
       { id: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'your-secret-key',
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
 

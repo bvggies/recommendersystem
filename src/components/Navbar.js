@@ -35,6 +35,7 @@ const Navbar = () => {
                   <li><Link to="/driver/dashboard">Dashboard</Link></li>
                   <li><Link to="/trips/create">Create Trip</Link></li>
                   <li><Link to="/trips/my-trips">My Trips</Link></li>
+                  <li><Link to="/driver/check-in">Check-in</Link></li>
                 </>
               )}
               {user?.role === 'admin' && (

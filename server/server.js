@@ -2,8 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const pool = require('./db/connection');
+const { validateJwtConfig } = require('./utils/jwtSecret');
 
 dotenv.config();
+
+try {
+  validateJwtConfig();
+} catch (error) {
+  console.error('Fatal: JWT configuration error:', error.message);
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL === '1') {
+    process.exit(1);
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +35,9 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/vehicles', require('./routes/vehicles'));
+app.use('/api/payments', require('./routes/payments'));
+app.use('/api/maps', require('./routes/maps'));
+app.use('/api/tracking', require('./routes/tracking'));
 app.use('/api/seed', require('./routes/seed'));
 
 // Health check
@@ -38,8 +51,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Only start server if not in Vercel serverless environment
-if (process.env.VERCEL !== '1') {
+// Only start server if not in Vercel serverless or test environment
+if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });

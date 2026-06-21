@@ -21,6 +21,10 @@ import AdminPassengers from './pages/AdminPassengers';
 import AdminTrips from './pages/AdminTrips';
 import AdminDepartures from './pages/AdminDepartures';
 import TripDetail from './pages/TripDetail';
+import PaymentCallback from './pages/PaymentCallback';
+import DriverTripManage from './pages/DriverTripManage';
+import DriverCheckIn from './pages/DriverCheckIn';
+import BookingTicketPage from './pages/BookingTicketPage';
 import './App.css';
 
 function App() {
@@ -36,6 +40,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/trips" element={<Trips />} />
               <Route path="/trips/:id" element={<TripDetail />} />
+              <Route path="/payment/callback" element={<PaymentCallback />} />
               <Route 
                 path="/dashboard" 
                 element={
@@ -69,6 +74,22 @@ function App() {
                 } 
               />
               <Route 
+                path="/driver/trips/:tripId/manage" 
+                element={
+                  <ProtectedRoute requiredRole="driver">
+                    <DriverTripManage />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/driver/check-in" 
+                element={
+                  <ProtectedRoute requiredRole="driver">
+                    <DriverCheckIn />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
                 path="/recommendations" 
                 element={
                   <ProtectedRoute>
@@ -81,6 +102,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Bookings />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/bookings/:id/ticket" 
+                element={
+                  <ProtectedRoute>
+                    <BookingTicketPage />
                   </ProtectedRoute>
                 } 
               />

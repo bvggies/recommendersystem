@@ -1,0 +1,85 @@
+.trip-status-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.trip-status-modal {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  width: min(520px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.trip-status-modal h2 {
+  margin: 0 0 0.5rem;
+}
+
+.trip-status-route {
+  margin: 0 0 0.25rem;
+}
+
+.trip-status-meta {
+  margin: 0 0 1rem;
+  color: #666;
+}
+
+.action-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.action-toggle {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid #cfd8ef;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+.action-toggle.active {
+  background: #1e3c72;
+  color: white;
+  border-color: #1e3c72;
+}
+
+.trip-status-modal textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font: inherit;
+  resize: vertical;
+}
+
+.trip-status-modal .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.status-badge.paused {
+  background: #fff4e5;
+  color: #b45309;
+}
+
+.btn-status {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #cfd8ef;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-status:hover {
+  background: #f5f7fb;
+}

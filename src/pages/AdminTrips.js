@@ -2,7 +2,24 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { tripService } from '../services/tripService';
+import RecurringTripFields, { ALL_RECURRING_DAYS } from '../components/RecurringTripFields';
+import TripStatusModal from '../components/TripStatusModal';
 import './AdminTrips.css';
+
+const formatRecurringSummary = (trip) => {
+  if (!trip.is_recurring) return null;
+
+  const schedule = trip.recurring_schedule || {};
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const days = schedule.days_of_week || ALL_RECURRING_DAYS;
+  const time = schedule.time || '';
+
+  if (days.length === 7) {
+    return `Daily at ${time}`;
+  }
+
+  return `${days.map((day) => dayNames[day]).join(', ')} at ${time}`;
+};
 
 const AdminTrips = () => {
   const { user, loading: authLoading } = useAuth();
@@ -21,17 +38,19 @@ const AdminTrips = () => {
     departure_date: '',
     departure_time: '',
     total_seats: '',
-    status: 'scheduled'
+    status: 'scheduled',
+    is_recurring: false,
+    recurring_days: ALL_RECURRING_DAYS
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [statusTrip, setStatusTrip] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // For admin, get all trips by passing status=all or empty status
       const [tripsRes, driversRes, vehiclesRes] = await Promise.all([
-        api.get('/trips?status=all'), // Get all trips for admin
+        api.get('/trips?status=all&include_templates=true'),
         api.get('/users?role=driver'),
         api.get('/vehicles')
       ]);
@@ -42,16 +61,10 @@ const AdminTrips = () => {
       console.error('Failed to load data:', error);
       const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
       const status = error.response?.status;
-      console.log('Error details:', {
-        status,
-        error: errorMsg,
-        hasToken: !!localStorage.getItem('token')
-      });
       setError(`Failed to load data (${status || 'Network Error'}): ${errorMsg}`);
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -64,14 +77,35 @@ const AdminTrips = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleRecurringToggle = (e) => {
+    setFormData({
+      ...formData,
+      is_recurring: e.target.checked,
+      recurring_days: formData.recurring_days.length ? formData.recurring_days : ALL_RECURRING_DAYS
+    });
+  };
+
+  const handleDayToggle = (day) => {
+    const days = formData.recurring_days.includes(day)
+      ? formData.recurring_days.filter((value) => value !== day)
+      : [...formData.recurring_days, day].sort((a, b) => a - b);
+
+    setFormData({ ...formData, recurring_days: days });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    if (!formData.driver_id || !formData.destination || !formData.fare || 
+    if (!formData.driver_id || !formData.destination || !formData.fare ||
         !formData.departure_date || !formData.departure_time || !formData.total_seats) {
       setError('Please fill in all required fields');
+      return;
+    }
+
+    if (formData.is_recurring && formData.recurring_days.length === 0) {
+      setError('Select at least one day for a recurring trip');
       return;
     }
 
@@ -84,16 +118,32 @@ const AdminTrips = () => {
         destination: formData.destination,
         fare: parseFloat(formData.fare),
         departure_time: departureDateTime,
-        total_seats: parseInt(formData.total_seats),
-        status: formData.status
+        total_seats: parseInt(formData.total_seats, 10),
+        status: formData.status,
+        is_recurring: formData.is_recurring
       };
+
+      if (formData.is_recurring) {
+        tripData.recurring_schedule = { days_of_week: formData.recurring_days };
+      } else if (editingTrip?.is_recurring) {
+        tripData.is_recurring = false;
+      }
+
+      if (editingTrip?.recurring_schedule?.template_id && !editingTrip?.is_recurring) {
+        delete tripData.is_recurring;
+        delete tripData.recurring_schedule;
+      }
 
       if (editingTrip) {
         await tripService.updateTrip(editingTrip.id, tripData);
-        setSuccess('Trip updated successfully!');
+        setSuccess(formData.is_recurring
+          ? 'Recurring trip updated. Future departures will follow the new schedule.'
+          : 'Trip updated successfully!');
       } else {
         await tripService.createTrip(tripData);
-        setSuccess('Trip created successfully!');
+        setSuccess(formData.is_recurring
+          ? 'Recurring trip created. Upcoming departures have been scheduled.'
+          : 'Trip created successfully!');
       }
       setShowForm(false);
       setEditingTrip(null);
@@ -114,13 +164,18 @@ const AdminTrips = () => {
       departure_date: '',
       departure_time: '',
       total_seats: '',
-      status: 'scheduled'
+      status: 'scheduled',
+      is_recurring: false,
+      recurring_days: ALL_RECURRING_DAYS
     });
   };
 
   const handleEdit = (trip) => {
     setEditingTrip(trip);
     const departure = new Date(trip.departure_time);
+    const schedule = trip.recurring_schedule || {};
+    const isTemplate = Boolean(trip.is_recurring);
+
     setFormData({
       driver_id: trip.driver_id || '',
       vehicle_id: trip.vehicle_id || '',
@@ -130,7 +185,9 @@ const AdminTrips = () => {
       departure_date: departure.toISOString().split('T')[0],
       departure_time: departure.toTimeString().slice(0, 5),
       total_seats: trip.total_seats || '',
-      status: trip.status || 'scheduled'
+      status: trip.status || 'scheduled',
+      is_recurring: isTemplate,
+      recurring_days: isTemplate ? (schedule.days_of_week || ALL_RECURRING_DAYS) : ALL_RECURRING_DAYS
     });
     setShowForm(true);
   };
@@ -182,6 +239,17 @@ const AdminTrips = () => {
 
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
+
+      {statusTrip && (
+        <TripStatusModal
+          trip={statusTrip}
+          onClose={() => setStatusTrip(null)}
+          onSuccess={(message) => {
+            setSuccess(message);
+            loadData();
+          }}
+        />
+      )}
 
       {showForm && (
         <div className="form-modal">
@@ -272,7 +340,7 @@ const AdminTrips = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Departure Date *</label>
+                  <label>{formData.is_recurring ? 'Effective From *' : 'Departure Date *'}</label>
                   <input
                     type="date"
                     name="departure_date"
@@ -293,6 +361,19 @@ const AdminTrips = () => {
                   />
                 </div>
               </div>
+
+              {!editingTrip?.recurring_schedule?.template_id || editingTrip?.is_recurring ? (
+                <RecurringTripFields
+                  isRecurring={formData.is_recurring}
+                  recurringDays={formData.recurring_days}
+                  onRecurringToggle={handleRecurringToggle}
+                  onDayToggle={handleDayToggle}
+                />
+              ) : (
+                <p className="recurring-help">
+                  This departure was auto-generated from a recurring schedule. Edit the recurring template to change future trips.
+                </p>
+              )}
 
               <div className="form-group">
                 <label>Status *</label>
@@ -330,6 +411,7 @@ const AdminTrips = () => {
               <th>Driver</th>
               <th>Vehicle</th>
               <th>Departure</th>
+              <th>Schedule</th>
               <th>Fare</th>
               <th>Seats</th>
               <th>Status</th>
@@ -339,21 +421,40 @@ const AdminTrips = () => {
           <tbody>
             {trips.length > 0 ? (
               trips.map(trip => (
-                <tr key={trip.id}>
+                <tr key={trip.id} className={trip.is_recurring ? 'recurring-template-row' : ''}>
                   <td>
                     <strong>{trip.origin} → {trip.destination}</strong>
                   </td>
                   <td>{trip.driver_name || 'N/A'}</td>
                   <td>{trip.registration_number || 'N/A'}</td>
                   <td>{formatDateTime(trip.departure_time)}</td>
+                  <td>
+                    {trip.is_recurring ? (
+                      <span className="recurring-badge" title={formatRecurringSummary(trip)}>
+                        🔁 {formatRecurringSummary(trip)}
+                      </span>
+                    ) : trip.recurring_schedule?.template_id ? (
+                      <span className="generated-badge">Auto-scheduled</span>
+                    ) : (
+                      'One-time'
+                    )}
+                  </td>
                   <td>₵{parseFloat(trip.fare).toFixed(2)}</td>
                   <td>{trip.available_seats}/{trip.total_seats}</td>
                   <td>
                     <span className={`status-badge ${trip.status}`}>
                       {trip.status}
                     </span>
+                    {trip.status_reason && (
+                      <div className="status-reason">{trip.status_reason.replace(/_/g, ' ')}</div>
+                    )}
                   </td>
                   <td>
+                    {(trip.status === 'scheduled' || trip.status === 'paused') && (
+                      <button onClick={() => setStatusTrip(trip)} className="btn-status">
+                        {trip.status === 'paused' ? '▶ Manage' : '⏸ Pause/Stop'}
+                      </button>
+                    )}
                     <button onClick={() => handleEdit(trip)} className="btn-edit">
                       ✏️ Edit
                     </button>
@@ -365,7 +466,7 @@ const AdminTrips = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="no-data">No trips found</td>
+                <td colSpan="9" className="no-data">No trips found</td>
               </tr>
             )}
           </tbody>
@@ -376,4 +477,3 @@ const AdminTrips = () => {
 };
 
 export default AdminTrips;
-

@@ -1,0 +1,15 @@
+.booking-ticket-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.booking-ticket-page h1 {
+  margin: 1rem 0;
+  color: #1e293b;
+}
+
+.booking-ticket-page .back-link {
+  color: #2563eb;
+  text-decoration: none;
+}

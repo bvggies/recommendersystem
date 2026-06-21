@@ -104,6 +104,11 @@ const MyTrips = () => {
               </div>
               <div className="trip-actions">
                 <Link to={`/trips/${trip.id}`} className="btn-view">View Details</Link>
+                {['scheduled', 'in-progress', 'paused'].includes(trip.status) && (
+                  <Link to={`/driver/trips/${trip.id}/manage`} className="btn-manage">
+                    Manage Trip
+                  </Link>
+                )}
                 {trip.status === 'scheduled' && (
                   <>
                     <button 

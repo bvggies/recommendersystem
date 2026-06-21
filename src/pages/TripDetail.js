@@ -3,6 +3,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { tripService } from '../services/tripService';
 import { bookingService } from '../services/bookingService';
+import PaymentModal from '../components/PaymentModal';
+import TripRouteMap from '../components/TripRouteMap';
+import LiveTripTracking from '../components/LiveTripTracking';
+import BookingTicket from '../components/BookingTicket';
 import './TripDetail.css';
 
 const TripDetail = () => {
@@ -15,6 +19,7 @@ const TripDetail = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [existingBooking, setExistingBooking] = useState(null);
+  const [showPayment, setShowPayment] = useState(false);
 
   const loadTrip = useCallback(async () => {
     setLoading(true);
@@ -31,13 +36,13 @@ const TripDetail = () => {
 
   const checkExistingBooking = useCallback(async () => {
     try {
-      const { bookings } = await bookingService.getMyBookings();
-      const booking = bookings.find(b => b.trip_id === parseInt(id) && b.booking_status !== 'cancelled');
-      if (booking) {
-        setExistingBooking(booking);
-      }
+      const { booking } = await bookingService.getMyBookingForTrip(id);
+      setExistingBooking(booking);
     } catch (error) {
-      console.error('Failed to check booking:', error);
+      if (error.response?.status !== 404) {
+        console.error('Failed to check booking:', error);
+      }
+      setExistingBooking(null);
     }
   }, [id]);
 
@@ -49,7 +54,15 @@ const TripDetail = () => {
   }, [id, isAuthenticated, loadTrip, checkExistingBooking]);
 
 
-  const handleBooking = async () => {
+  const handlePaymentSuccess = (result) => {
+    setSuccess('Payment successful! Your booking is confirmed.');
+    setExistingBooking(result.booking);
+    setShowPayment(false);
+    loadTrip();
+    checkExistingBooking();
+  };
+
+  const handleProceedToPayment = () => {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/trips/${id}` } });
       return;
@@ -68,20 +81,7 @@ const TripDetail = () => {
       return;
     }
 
-    try {
-      const result = await bookingService.createBooking({
-        trip_id: parseInt(id),
-        seats_booked: seatsToBook
-      });
-      setSuccess(`Successfully booked ${seatsToBook} seat(s)!`);
-      setExistingBooking(result.booking);
-      // Reload trip to update available seats
-      loadTrip();
-      // Reload booking check
-      checkExistingBooking();
-    } catch (error) {
-      setError(error.response?.data?.error || 'Failed to create booking');
-    }
+    setShowPayment(true);
   };
 
   const handleCancelBooking = async () => {
@@ -130,7 +130,25 @@ const TripDetail = () => {
   }
 
   const isPastTrip = new Date(trip.departure_time) < new Date();
+  const isHistoricalBooking = existingBooking && (
+    isPastTrip ||
+    trip.status === 'completed' ||
+    existingBooking.booking_status === 'completed'
+  );
   const canBook = trip.status === 'scheduled' && !isPastTrip && trip.available_seats > 0 && user?.role !== 'driver';
+  const canCancelBooking = existingBooking &&
+    (existingBooking.booking_status === 'confirmed' || existingBooking.booking_status === 'pending') &&
+    !isPastTrip &&
+    trip.status === 'scheduled';
+
+  const statusReasonLabels = {
+    vehicle_breakdown: 'vehicle breakdown',
+    driver_unavailable: 'driver unavailability',
+    weather: 'weather conditions',
+    route_issue: 'a route issue',
+    maintenance: 'scheduled maintenance',
+    other: 'operational reasons'
+  };
 
   return (
     <div className="trip-detail-page">
@@ -233,18 +251,52 @@ const TripDetail = () => {
               </div>
             </div>
           )}
+
+          <TripRouteMap origin={trip.origin} destination={trip.destination} />
+
+          {(existingBooking || trip.tracking_active || trip.delay_minutes > 0 || trip.status === 'in-progress') && (
+            <LiveTripTracking tripId={trip.id} />
+          )}
         </div>
+
+        {showPayment && (
+          <PaymentModal
+            trip={trip}
+            seatsToBook={seatsToBook}
+            onClose={() => setShowPayment(false)}
+            onSuccess={handlePaymentSuccess}
+          />
+        )}
 
         {/* Booking Section */}
         {existingBooking ? (
-          <div className="booking-card existing-booking">
-            <h3>✅ Your Booking</h3>
+          <div className={`booking-card existing-booking ${isHistoricalBooking ? 'trip-history' : ''}`}>
+            <h3>{isHistoricalBooking ? '📋 Your Trip History' : '✅ Your Booking'}</h3>
             <div className="booking-details">
               <p><strong>Seats Booked:</strong> {existingBooking.seats_booked}</p>
               <p><strong>Status:</strong> <span className={`status-badge ${existingBooking.booking_status}`}>{existingBooking.booking_status}</span></p>
+              <p><strong>Payment:</strong> <span className={`status-badge ${existingBooking.payment_status}`}>{existingBooking.payment_status}</span></p>
+              {existingBooking.payment_reference && (
+                <p><strong>Reference:</strong> {existingBooking.payment_reference}</p>
+              )}
               <p><strong>Booked On:</strong> {formatDate(existingBooking.created_at)}</p>
+              {existingBooking.verified && existingBooking.checked_in_at && (
+                <p className="verification-status verified">
+                  <strong>Boarding verified:</strong> {formatDate(existingBooking.checked_in_at)}
+                </p>
+              )}
+              {!existingBooking.verified && !isHistoricalBooking && (
+                <p className="verification-status pending">Show your QR code below at the station to verify boarding</p>
+              )}
             </div>
-            {existingBooking.booking_status === 'confirmed' && (
+            {existingBooking.payment_status === 'paid' && (
+              <BookingTicket
+                bookingId={existingBooking.id}
+                compact
+                historical={isHistoricalBooking}
+              />
+            )}
+            {canCancelBooking && (
               <button onClick={handleCancelBooking} className="cancel-booking-btn">
                 Cancel Booking
               </button>
@@ -307,8 +359,8 @@ const TripDetail = () => {
                   </div>
                 </div>
 
-                <button onClick={handleBooking} className="book-btn">
-                  🎫 Book {seatsToBook} Seat{seatsToBook > 1 ? 's' : ''} Now
+                <button onClick={handleProceedToPayment} className="book-btn">
+                  💳 Pay & Book {seatsToBook} Seat{seatsToBook > 1 ? 's' : ''}
                 </button>
               </>
             )}
@@ -319,6 +371,8 @@ const TripDetail = () => {
             <p>
               {isPastTrip
                 ? 'This trip has already departed.'
+                : trip.status === 'paused'
+                ? `This trip is temporarily paused due to ${statusReasonLabels[trip.status_reason] || 'operational reasons'}.${trip.status_note ? ` ${trip.status_note}` : ''}`
                 : trip.available_seats === 0
                 ? 'All seats have been booked.'
                 : trip.status !== 'scheduled'

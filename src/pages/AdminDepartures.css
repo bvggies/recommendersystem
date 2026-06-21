@@ -273,6 +273,83 @@
   }
 }
 
+.trip-details span {
+  white-space: nowrap;
+}
+
+.recurring-fields,
+.recurring-help,
+.recurring-badge,
+.day-toggle-group,
+.day-toggle,
+.checkbox-label {
+  /* Shared with AdminTrips recurring styles */
+}
+
+.recurring-fields {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #f8faff;
+  border: 1px solid #dbe4ff;
+  border-radius: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #1e3c72;
+}
+
+.recurring-help {
+  margin: 0.5rem 0 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.day-toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.day-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #cfd8ef;
+  border-radius: 999px;
+  background: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.recurring-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef4ff;
+  color: #1e3c72;
+}
+
+.btn-status {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #cfd8ef;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.status-badge.paused {
+  background: #fff4e5;
+  color: #b45309;
+}
+
 @media (max-width: 768px) {
   .admin-departures {
     padding: 1rem;

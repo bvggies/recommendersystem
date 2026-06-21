@@ -14,6 +14,69 @@
   margin-bottom: 0.5rem;
 }
 
+.bookings-filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  justify-content: center;
+}
+
+.bookings-filter-tabs button {
+  padding: 0.6rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.bookings-filter-tabs button.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.booking-card.history-card {
+  border-color: #cbd5e1;
+  background: #fafafa;
+}
+
+.trip-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.trip-link:hover {
+  color: #2563eb;
+}
+
+.verified-label {
+  color: #15803d;
+  font-weight: 600;
+}
+
+.booking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.trip-detail-link-btn {
+  display: inline-block;
+  padding: 0.65rem 1rem;
+  background: #f1f5f9;
+  color: #334155;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.trip-detail-link-btn:hover {
+  background: #e2e8f0;
+}
+
 .bookings-list {
   display: flex;
   flex-direction: column;
@@ -69,6 +132,26 @@
   color: #666;
 }
 
+.booking-status.pending {
+  background: #fff4e5;
+  color: #b45309;
+}
+
+.verify-payment-btn {
+  margin-right: 0.75rem;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #1e3c72;
+  color: white;
+  cursor: pointer;
+}
+
+.verify-payment-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .cancel-booking-btn {
   margin-top: 1rem;
   padding: 0.75rem 1.5rem;
@@ -106,5 +189,21 @@
 
 .browse-trips-btn:hover {
   transform: translateY(-2px);
+}
+
+.ticket-link-btn {
+  display: inline-block;
+  margin-top: 0.75rem;
+  margin-right: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.ticket-link-btn:hover {
+  background: #1d4ed8;
 }
 

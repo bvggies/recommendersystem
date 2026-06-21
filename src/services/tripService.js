@@ -1,12 +1,24 @@
 import api from './api';
 
+export function buildTripFilters(filters = {}) {
+  const cleaned = {};
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    const trimmed = String(value).trim();
+    if (trimmed !== '') {
+      cleaned[key] = trimmed;
+    }
+  });
+
+  return cleaned;
+}
+
 export const tripService = {
   getTrips: async (filters = {}) => {
-    const params = new URLSearchParams();
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) params.append(key, filters[key]);
-    });
-    const response = await api.get(`/trips?${params.toString()}`);
+    const params = new URLSearchParams(buildTripFilters(filters));
+    const query = params.toString();
+    const response = await api.get(query ? `/trips?${query}` : '/trips');
     return response.data;
   },
 
@@ -27,6 +39,21 @@ export const tripService = {
 
   deleteTrip: async (id) => {
     const response = await api.delete(`/trips/${id}`);
+    return response.data;
+  },
+
+  pauseTrip: async (id, data) => {
+    const response = await api.post(`/trips/${id}/pause`, data);
+    return response.data;
+  },
+
+  resumeTrip: async (id, data) => {
+    const response = await api.post(`/trips/${id}/resume`, data);
+    return response.data;
+  },
+
+  stopTrip: async (id, data) => {
+    const response = await api.post(`/trips/${id}/stop`, data);
     return response.data;
   },
 
