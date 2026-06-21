@@ -10,6 +10,7 @@ const {
   deleteFutureGeneratedInstances
 } = require('../utils/recurringTrips');
 const { pauseTrips, resumeTrips, stopTrips } = require('../utils/tripStatusActions');
+const { expirePastScheduledTrips } = require('../utils/expirePastTrips');
 
 const router = express.Router();
 
@@ -32,6 +33,7 @@ router.get('/', async (req, res) => {
   }
   try {
     await materializeRecurringInstances(pool);
+    await expirePastScheduledTrips(pool);
 
     const { origin, destination, min_fare, max_fare, vehicle_type, departure_date, status } = req.query;
     const trimmedOrigin = origin?.trim();
@@ -96,9 +98,13 @@ router.get('/', async (req, res) => {
       query += ` AND t.status = $${paramCount}`;
       params.push(status);
       paramCount++;
+
+      // Scheduled search should only return bookable upcoming departures
+      if (status === 'scheduled') {
+        query += ` AND t.departure_time > NOW()`;
+      }
     } else if (status !== 'all') {
-      // For admin users, show all trips if status=all
-      // For regular users, only show scheduled future trips
+      // Default for passengers: upcoming scheduled trips only
       if (!isAdmin) {
         query += ` AND t.status = 'scheduled' AND t.departure_time > NOW()`;
       }
@@ -217,6 +223,8 @@ router.post('/:id/stop', authenticateToken, authorizeRoles('admin'), async (req,
 // Get single trip
 router.get('/:id', async (req, res) => {
   try {
+    await expirePastScheduledTrips(pool);
+
     const result = await pool.query(
       `SELECT t.*, u.full_name as driver_name, u.phone as driver_phone,
               v.vehicle_type, v.registration_number, v.comfort_level,
