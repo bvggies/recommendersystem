@@ -34,10 +34,18 @@ const PaymentCallback = () => {
               }
             });
           }, 1200);
+          return;
         }
+
+        setStatus('error');
+        setMessage('Payment verified but booking was not found. Check My Bookings.');
       })
       .catch((error) => {
         setStatus('error');
+        if (error.response?.status === 401) {
+          setMessage('Please log in again to complete your booking verification.');
+          return;
+        }
         setMessage(error.response?.data?.error || 'Payment verification failed.');
       });
   }, [searchParams, navigate]);
@@ -56,7 +64,8 @@ const PaymentCallback = () => {
         {status === 'loading' && <div className="payment-spinner" />}
         {status === 'error' && (
           <div className="payment-callback-actions">
-            <Link to="/trips" className="btn-primary">Browse Trips</Link>
+            <Link to="/login" className="btn-primary">Log In</Link>
+            <Link to="/trips" className="btn-secondary">Browse Trips</Link>
             <Link to="/bookings" className="btn-secondary">My Bookings</Link>
           </div>
         )}
