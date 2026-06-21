@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const {
   generateReference,
   isPaystackConfigured,
+  normalizePaystackEmail,
   MOBILE_MONEY_PROVIDERS
 } = require('../utils/paystack');
 const { withGhanaContext } = require('../utils/googleMaps');
@@ -32,4 +33,15 @@ test('isPaystackConfigured reflects env var', () => {
 test('withGhanaContext appends Ghana to local place names', () => {
   assert.equal(withGhanaContext('Nkawkaw'), 'Nkawkaw, Ghana');
   assert.equal(withGhanaContext('Accra, Ghana'), 'Accra, Ghana');
+});
+
+test('normalizePaystackEmail falls back to valid domain email', () => {
+  assert.equal(
+    normalizePaystackEmail('', 42, 'john doe'),
+    'john.doe.42@passengers.nkawkawtransport.com'
+  );
+  assert.equal(
+    normalizePaystackEmail('valid@example.com', 42, 'john'),
+    'valid@example.com'
+  );
 });

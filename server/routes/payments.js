@@ -6,6 +6,7 @@ const {
   isPaystackConfigured,
   getPublicKey,
   generateReference,
+  normalizePaystackEmail,
   initializeTransaction,
   chargeMobileMoney,
   verifyTransaction
@@ -15,16 +16,22 @@ const { ensureBoardingToken } = require('../utils/bookingTickets');
 const router = express.Router();
 
 const PAYMENT_METHODS = {
+  paystack: { label: 'Paystack (Card & Mobile Money)', type: 'redirect', channels: ['card', 'mobile_money', 'bank'] },
   paystack_card: { label: 'Card (Paystack)', type: 'redirect', channels: ['card'] },
   mtn_momo: { label: 'MTN Mobile Money', type: 'mobile_money', provider: 'mtn' },
   vodafone_cash: { label: 'Vodafone Cash', type: 'mobile_money', provider: 'vod' },
-  airteltigo_money: { label: 'AirtelTigo Money', type: 'mobile_money', provider: 'tgo' },
-  paystack: { label: 'Paystack (All methods)', type: 'redirect', channels: ['card', 'mobile_money', 'bank'] }
+  airteltigo_money: { label: 'AirtelTigo Money', type: 'mobile_money', provider: 'tgo' }
 };
 
 function getCallbackUrl() {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  return `${frontendUrl.replace(/\/$/, '')}/payment/callback`;
+  const callback = `${frontendUrl.replace(/\/$/, '')}/payment/callback`;
+
+  if (process.env.NODE_ENV === 'production' && !callback.startsWith('https://')) {
+    throw new Error('FRONTEND_URL must be set to your HTTPS site URL in production');
+  }
+
+  return callback;
 }
 
 async function finalizeSuccessfulPayment(client, booking, verification) {
@@ -104,11 +111,13 @@ router.post('/initialize', authenticateToken, async (req, res) => {
     phone
   } = req.body;
 
+  const seats = parseInt(seats_booked, 10);
+
   if (!trip_id) {
     return res.status(400).json({ error: 'Trip ID is required' });
   }
 
-  if (!Number.isInteger(seats_booked) || seats_booked < 1) {
+  if (!Number.isInteger(seats) || seats < 1) {
     return res.status(400).json({ error: 'seats_booked must be a positive integer' });
   }
 
@@ -119,6 +128,14 @@ router.post('/initialize', authenticateToken, async (req, res) => {
 
   if (method.type === 'mobile_money' && !phone) {
     return res.status(400).json({ error: 'Phone number is required for mobile money payments' });
+  }
+
+  let callbackUrl;
+
+  try {
+    callbackUrl = getCallbackUrl();
+  } catch (callbackError) {
+    return res.status(500).json({ error: callbackError.message });
   }
 
   const client = await pool.connect();
@@ -146,7 +163,7 @@ router.post('/initialize', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Cannot book your own trip' });
     }
 
-    if (trip.available_seats < seats_booked) {
+    if (trip.available_seats < seats) {
       await client.query('ROLLBACK');
       return res.status(400).json({ error: 'Not enough seats available' });
     }
@@ -167,7 +184,7 @@ router.post('/initialize', authenticateToken, async (req, res) => {
        SET available_seats = available_seats - $1
        WHERE id = $2 AND available_seats >= $1
        RETURNING available_seats`,
-      [seats_booked, trip_id]
+      [seats, trip_id]
     );
 
     if (seatUpdate.rowCount === 0) {
@@ -176,13 +193,17 @@ router.post('/initialize', authenticateToken, async (req, res) => {
     }
 
     const reference = generateReference('TRP');
-    const amount = Number(trip.fare) * seats_booked;
+    const amount = Number(trip.fare) * seats;
 
     const userResult = await client.query(
-      'SELECT email FROM users WHERE id = $1',
+      'SELECT email, username FROM users WHERE id = $1',
       [req.user.id]
     );
-    const passengerEmail = userResult.rows[0]?.email || `${req.user.username}@passenger.local`;
+    const passengerEmail = normalizePaystackEmail(
+      userResult.rows[0]?.email,
+      req.user.id,
+      userResult.rows[0]?.username || req.user.username
+    );
 
     const bookingResult = await client.query(
       `INSERT INTO bookings (
@@ -191,17 +212,15 @@ router.post('/initialize', authenticateToken, async (req, res) => {
        )
        VALUES ($1, $2, $3, 'pending', 'pending', $4, $5)
        RETURNING *`,
-      [req.user.id, trip_id, seats_booked, payment_method, reference]
+      [req.user.id, trip_id, seats, payment_method, reference]
     );
 
     const booking = bookingResult.rows[0];
     const metadata = {
-      booking_id: booking.id,
-      trip_id,
-      passenger_id: req.user.id,
-      custom_fields: [
-        { display_name: 'Route', variable_name: 'route', value: `${trip.origin} → ${trip.destination}` }
-      ]
+      booking_id: String(booking.id),
+      trip_id: String(trip_id),
+      passenger_id: String(req.user.id),
+      route: `${trip.origin} → ${trip.destination}`
     };
 
     let paymentResponse;
@@ -220,7 +239,7 @@ router.post('/initialize', authenticateToken, async (req, res) => {
         email: passengerEmail,
         amount,
         reference,
-        callbackUrl: getCallbackUrl(),
+        callbackUrl,
         channels: method.channels,
         metadata
       });
@@ -245,9 +264,23 @@ router.post('/initialize', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Payment rollback error:', rollbackError);
+    }
+
     console.error('Payment initialize error:', error);
-    res.status(500).json({ error: error.message || 'Failed to initialize payment' });
+
+    const statusCode = error.statusCode && error.statusCode >= 400 && error.statusCode < 500
+      ? error.statusCode
+      : /minimum payment|valid ghana|not configured|frontend_url/i.test(error.message)
+      ? 400
+      : 502;
+
+    res.status(statusCode).json({
+      error: error.message || 'Failed to initialize payment'
+    });
   } finally {
     client.release();
   }

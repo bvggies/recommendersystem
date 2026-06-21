@@ -1,4 +1,5 @@
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
+const MIN_AMOUNT_PESEWAS = 100;
 
 function isPaystackConfigured() {
   return Boolean(process.env.PAYSTACK_SECRET_KEY);
@@ -10,6 +11,40 @@ function getPublicKey() {
 
 function generateReference(prefix = 'TR') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function normalizePaystackEmail(email, userId, username) {
+  const trimmed = String(email || '').trim();
+  if (trimmed && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const safeName = String(username || 'passenger')
+    .trim()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-zA-Z0-9._-]/g, '')
+    .slice(0, 32) || 'passenger';
+
+  return `${safeName}.${userId}@passengers.nkawkawtransport.com`;
+}
+
+function normalizeMetadata(metadata = {}) {
+  const normalized = {};
+
+  Object.entries(metadata).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    normalized[key] = typeof value === 'string' ? value : JSON.stringify(value);
+  });
+
+  return normalized;
+}
+
+function toPesewas(amount) {
+  const pesewas = Math.round(Number(amount) * 100);
+  if (!Number.isFinite(pesewas) || pesewas < MIN_AMOUNT_PESEWAS) {
+    throw new Error(`Minimum payment amount is ₵${(MIN_AMOUNT_PESEWAS / 100).toFixed(2)}`);
+  }
+  return pesewas;
 }
 
 async function paystackRequest(path, options = {}) {
@@ -28,10 +63,19 @@ async function paystackRequest(path, options = {}) {
     }
   });
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error('Invalid response from Paystack');
+  }
 
   if (!response.ok || !data.status) {
-    throw new Error(data.message || 'Paystack request failed');
+    const detail = data?.data?.message || data?.message || 'Paystack request failed';
+    const error = new Error(detail);
+    error.paystack = data;
+    error.statusCode = response.status;
+    throw error;
   }
 
   return data;
@@ -61,12 +105,12 @@ async function initializeTransaction({
     method: 'POST',
     body: JSON.stringify({
       email,
-      amount: Math.round(amount * 100),
+      amount: toPesewas(amount),
       currency: 'GHS',
       reference,
       callback_url: callbackUrl,
       channels: channels || ['card', 'mobile_money', 'bank'],
-      metadata
+      metadata: normalizeMetadata(metadata)
     })
   });
 }
@@ -84,18 +128,23 @@ async function chargeMobileMoney({ email, amount, reference, phone, provider, me
     };
   }
 
+  const normalizedPhone = String(phone || '').replace(/\D/g, '');
+  if (normalizedPhone.length < 10) {
+    throw new Error('Enter a valid Ghana mobile money number');
+  }
+
   return paystackRequest('/charge', {
     method: 'POST',
     body: JSON.stringify({
       email,
-      amount: Math.round(amount * 100),
+      amount: toPesewas(amount),
       currency: 'GHS',
       reference,
       mobile_money: {
-        phone,
+        phone: normalizedPhone,
         provider
       },
-      metadata
+      metadata: normalizeMetadata(metadata)
     })
   });
 }
@@ -128,9 +177,13 @@ const MOBILE_MONEY_PROVIDERS = {
 
 module.exports = {
   MOBILE_MONEY_PROVIDERS,
+  MIN_AMOUNT_PESEWAS,
   isPaystackConfigured,
   getPublicKey,
   generateReference,
+  normalizePaystackEmail,
+  normalizeMetadata,
+  toPesewas,
   initializeTransaction,
   chargeMobileMoney,
   verifyTransaction

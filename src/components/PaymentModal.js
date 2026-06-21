@@ -9,7 +9,7 @@ const PaymentModal = ({
   onSuccess
 }) => {
   const [methods, setMethods] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState('mtn_momo');
+  const [paymentMethod, setPaymentMethod] = useState('paystack');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [polling, setPolling] = useState(false);
@@ -25,7 +25,10 @@ const PaymentModal = ({
       .then((config) => {
         setMethods(config.methods || []);
         setMockMode(config.mock_mode);
-        if (config.methods?.length) {
+        const paystackMethod = config.methods?.find((method) => method.id === 'paystack');
+        if (paystackMethod) {
+          setPaymentMethod('paystack');
+        } else if (config.methods?.length) {
           setPaymentMethod(config.methods[0].id);
         }
       })

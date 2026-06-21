@@ -23,8 +23,8 @@ const Home = () => {
     if (isAuthenticated) {
       loadRecommendations();
     }
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(loadTrips, 30000);
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(loadTrips, 60000);
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
